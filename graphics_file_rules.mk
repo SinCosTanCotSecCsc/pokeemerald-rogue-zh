@@ -307,19 +307,25 @@ $(TILESETGFXDIR)/secondary/mystery_events_house/tiles.4bpp: %.4bpp: %.png
 
 ### Fonts ###
 
-$(FONTGFXDIR)/small.latfont: $(FONTGFXDIR)/latin_small.png
+$(FONTGFXDIR)/small.fwlatfont: $(FONTGFXDIR)/latin_small.png
 	$(GFX) $< $@
 
-$(FONTGFXDIR)/normal.latfont: $(FONTGFXDIR)/latin_normal.png
+$(FONTGFXDIR)/normal.fwlatfont: $(FONTGFXDIR)/latin_normal.png
 	$(GFX) $< $@
 
-$(FONTGFXDIR)/short.latfont: $(FONTGFXDIR)/latin_short.png
+$(FONTGFXDIR)/short.fwlatfont: $(FONTGFXDIR)/latin_short.png
 	$(GFX) $< $@
 
-$(FONTGFXDIR)/narrow.latfont: $(FONTGFXDIR)/latin_narrow.png
+$(FONTGFXDIR)/narrow.fwlatfont: $(FONTGFXDIR)/latin_narrow.png
 	$(GFX) $< $@
 
-$(FONTGFXDIR)/small_narrow.latfont: $(FONTGFXDIR)/latin_small_narrow.png
+$(FONTGFXDIR)/small_narrow.fwlatfont: $(FONTGFXDIR)/latin_small_narrow.png
+	$(GFX) $< $@
+
+$(FONTGFXDIR)/chinese_small.fwlatfont: $(FONTGFXDIR)/chinese_small.png
+	$(GFX) $< $@
+
+$(FONTGFXDIR)/chinese_normal.fwlatfont: $(FONTGFXDIR)/chinese_normal.png
 	$(GFX) $< $@
 
 $(FONTGFXDIR)/small.hwjpnfont: $(FONTGFXDIR)/japanese_small.png
