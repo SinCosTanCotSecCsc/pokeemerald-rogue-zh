@@ -2,20 +2,18 @@
 """翻译表校验器。
 
 用法:
-    python3 tools/translation_check.py [翻译表路径] [--impact]
+    python3 tools/translation_check.py [表文件] [--impact]
 
-不带参数时校验 translations/zh_CN.txt，检查：
-  1. 字符集   —— 译文中每个非 ASCII 字符都能被 charmap.txt 编码（否则构建期报
-                 unknown character U+XXXX）。
-  2. 占位符   —— {PLAYER} {STR_VAR_1} 等花括号占位符与 \\n \\l \\p 转义，
+不带参数时校验 translations/zh_CN.txt（它通过 @include 引入名称表）。检查：
+  1. 字符集   —— 译文中每个非 ASCII 字符都能被 charmap.txt 编码
+                 （否则构建期报 unknown character U+XXXX）。
+  2. 占位符   —— {PLAYER} {STR_VAR_1} 等占位符与 \\n \\l \\p 转义，
                  在译文与原文中数量一致（顺序可因语序调整而不同）。
-  3. 字节预算 —— 有硬性长度上限的名称类字符串（道具名/招式名/宝可梦名等）
-                 译文字节数不得超过上限。
+  3. 字节预算 —— 名称类字符串有硬性长度上限，译文字节数不得超过。
   4. 陈旧条目 —— 表中「原文」在源码树里已找不到。合并上游更新后用它确认
-                 哪些译文失去了对应源文本。
+                 哪些译文失去了对应源文本（译文会静默回退成英文，构建不报错）。
 
-加 --impact 时另外列出每个条目除 src/strings.c 之外还会影响哪些文件
-——因为查表是按原文精确匹配、全局生效，短串可能误伤其他语境。
+加 --impact 时列出每个条目除界面文本外还会影响哪些文件。
 """
 
 import collections
@@ -25,77 +23,84 @@ import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
-# 有硬性字节上限的名称类别：常量前缀 -> (上限, 说明)
+# 名称类字符串的可用字节数（含 EOS）
 BYTE_BUDGETS = [
     ('ITEM_NAME_LENGTH', 16, '道具名'),
-    ('MOVE_NAME_LENGTH', 12, '招式名'),
-    ('POKEMON_NAME_LENGTH', 10, '宝可梦/昵称'),
+    ('MOVE_NAME_LENGTH', 17, '招式名'),        # B_EXPANDED_MOVE_NAMES=TRUE -> 16+1
+    ('ABILITY_NAME_LENGTH', 17, '特性名'),      # 16+1
+    ('POKEMON_NAME_LENGTH', 11, '宝可梦名'),     # u8 speciesName[10+1]
     ('PLAYER_NAME_LENGTH', 7, '玩家名'),
     ('BOX_NAME_LENGTH', 8, '盒子名'),
-    ('BERRY_NAME_LENGTH', 6, '树果名'),
-    ('ABILITY_NAME_LENGTH', 12, '特性名'),
     ('POKEMON_HUB_NAME_LENGTH', 15, '枢纽名'),
 ]
 
 STRING_LITERAL = re.compile(r'(?:_\(\s*"((?:[^"\\]|\\.)*)"|\.string\s+"((?:[^"\\]|\\.)*)")')
 BRACE_OR_ESCAPE = re.compile(r'\{[^}]*\}|\\[nlp]')
 TABLE_ENTRY = re.compile(r'^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"')
+INCLUDE = re.compile(r'^@include\s+"([^"]+)"')
+FILE_SCOPE = re.compile(r'^@file\s*(?:"([^"]*)")?\s*$')
+NAME_CONST = re.compile(r'const u8 \w+\[(\w+)(?:\s*\+\s*1)?\] = _\("')
 
 
 def load_charmap():
-    """返回 (单字节可编码字符集, 中文区可编码字符集)。"""
-    text = (REPO / 'charmap.txt').read_text(encoding='utf-8').splitlines()
-    chinese_start = next(i for i, l in enumerate(text) if l.startswith('@Chinese char'))
-
-    single, chinese = set(), set()
-    for i, line in enumerate(text):
-        line = line.split('@')[0].strip()
-        if not line or '=' not in line:
+    chars = set()
+    for line in (REPO / 'charmap.txt').read_text(encoding='utf-8').splitlines():
+        body = line.split('@')[0].strip()
+        if not body or '=' not in body:
             continue
-        key, value = line.rsplit('=', 1)
-        key, value = key.strip(), value.strip().replace(' ', '')
-        if not (key.startswith("'") and key.endswith("'")):
-            continue
-        if i < chinese_start and len(value) == 2:
-            single.add(key[1:-1])
-        elif i >= chinese_start and len(value) == 4:
-            chinese.add(key[1:-1])
-    return single, chinese
+        k, v = body.rsplit('=', 1)
+        k, v = k.strip(), v.strip().replace(' ', '')
+        if k.startswith("'") and k.endswith("'") and len(k) >= 3:
+            chars.add(k[1:-1])
+    return chars
 
 
 def byte_len(s):
-    """按 charmap 计算字面量编码后的字节数（中文区字符 2 字节）。"""
-    return sum(2 if (ord(c) > 0x2E80 or c in '：；？！，．、。《》—～“”‘’…') else 1 for c in s)
+    full = set('：；？！，．、。《》—～“”‘’…')
+    return sum(2 if (ord(c) > 0x2E80 or c in full) else 1 for c in s)
 
 
-def load_table(path):
-    entries, problems = [], []
-    seen = {}
+def load_table(path, entries=None, stack=None, problems=None):
+    """递归加载；条目为 (原文, 译文, 行号, 相对路径, 作用域)。"""
+    if entries is None:
+        entries, stack, problems = [], [], []
+    path = pathlib.Path(path)
+    if path in stack:
+        problems.append(f'{path}: 循环 @include')
+        return entries, problems
+    stack.append(path)
+
+    scope = None
     for num, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
-        stripped = line.split('@')[0].strip()
-        if not stripped or line.lstrip().startswith('#'):
+        s = line.strip()
+        if not s or s.startswith('#'):
             continue
-        m = TABLE_ENTRY.match(line.strip())
+        m = INCLUDE.match(s)
+        if m:
+            load_table(path.parent / m.group(1), entries, stack, problems)
+            continue
+        m = FILE_SCOPE.match(s)
+        if m:
+            scope = m.group(1) or None
+            continue
+        if s.startswith('@'):
+            continue
+        m = TABLE_ENTRY.match(s)
         if not m:
-            problems.append(f'{path}:{num}: 无法解析: {line.strip()[:60]}')
+            problems.append(f'{path}:{num}: 无法解析: {s[:60]}')
             continue
-        key, value = m.group(1), m.group(2)
-        if key in seen:
-            problems.append(f'{path}:{num}: 原文重复（首次见于第 {seen[key]} 行）: {key[:50]}')
-        seen[key] = num
-        entries.append((num, key, value))
+        entries.append((m.group(1), m.group(2), num, str(path.relative_to(REPO)), scope))
+
+    stack.pop()
     return entries, problems
 
 
 def scan_sources():
-    """收集源码树中所有字符串字面量 -> 出现位置。"""
     hits = collections.defaultdict(set)
-    suffixes = {'.c', '.h', '.inc', '.s', '.pory'}
     for path in REPO.rglob('*'):
-        if path.suffix not in suffixes:
+        if path.suffix not in {'.c', '.h', '.inc', '.s', '.pory'}:
             continue
-        parts = path.parts
-        if '.git' in parts or 'build' in parts or 'tools' in parts:
+        if '.git' in path.parts or 'build' in path.parts or 'tools' in path.parts:
             continue
         try:
             text = path.read_text(encoding='utf-8')
@@ -103,67 +108,81 @@ def scan_sources():
             continue
         rel = str(path.relative_to(REPO))
         for m in STRING_LITERAL.finditer(text):
-            s = m.group(1) if m.group(1) is not None else m.group(2)
-            hits[s].add(rel)
+            hits[m.group(1) if m.group(1) is not None else m.group(2)].add(rel)
     return hits
 
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    show_impact = '--impact' in sys.argv
     table = pathlib.Path(args[0]) if args else REPO / 'translations/zh_CN.txt'
+    show_impact = '--impact' in sys.argv
 
     if not table.exists():
         print(f'找不到翻译表: {table}')
         return 1
 
-    single, chinese = load_charmap()
-    allowed = single | chinese
+    allowed = load_charmap()
     entries, problems = load_table(table)
-    print(f'翻译表 {table}: {len(entries)} 条')
+    scoped_n = sum(1 for e in entries if e[4])
+    print(f'翻译表 {table}: {len(entries)} 条'
+          f'（含 @include；其中 {scoped_n} 条为 @file 限定）')
 
     # 1. 字符集
-    for num, key, value in entries:
+    for key, value, num, src, scope in entries:
         bad = sorted({c for c in value if ord(c) >= 0x7F and c not in allowed})
         if bad:
-            problems.append(f'{table}:{num}: 译文含 charmap 之外的字符 {"".join(bad)} '
-                            f'(U+{", U+".join(f"{ord(c):04X}" for c in bad)})')
+            problems.append(f'{src}:{num}: 译文含 charmap 之外的字符 '
+                            f'{"".join(bad)} (U+{", U+".join(f"{ord(c):04X}" for c in bad)})')
 
     # 2. 占位符 / 转义
-    for num, key, value in entries:
+    for key, value, num, src, scope in entries:
         want, got = BRACE_OR_ESCAPE.findall(key), BRACE_OR_ESCAPE.findall(value)
         if collections.Counter(want) != collections.Counter(got):
-            problems.append(f'{table}:{num}: 占位符不一致\n      原文 {want}\n      译文 {got}')
+            problems.append(f'{src}:{num}: 占位符不一致\n      原文 {want}\n      译文 {got}')
 
-    # 3. 字节预算
+    # 3. 字节预算（按名称表实际声明所用常量判断）
     sources = scan_sources()
-    for num, key, value in entries:
-        for path in sources.get(key, ()):
-            text = (REPO / path).read_text(encoding='utf-8')
-            for const, limit, label in BYTE_BUDGETS:
-                for m in re.finditer(rf'const u8 \w+\[{const}\] = _\("{re.escape(key)}"\)', text):
-                    if byte_len(value) > limit:
-                        problems.append(f'{table}:{num}: {label} 超字节上限 '
-                                        f'({byte_len(value)} > {limit}): {key[:40]} @ {path}')
+    budgets = dict((c, (lim, lab)) for c, lim, lab in BYTE_BUDGETS)
+    for key, value, num, src, scope in entries:
+        for f in sources.get(key, ()):
+            try:
+                text = (REPO / f).read_text(encoding='utf-8')
+            except OSError:
+                continue
+            for m in re.finditer(r'const u8 \w+\[(\w+)(?:\s*\+\s*1)?\] = _\("'
+                                 + re.escape(key) + r'"\)', text):
+                const = m.group(1)
+                if const in budgets:
+                    lim, lab = budgets[const]
+                    if byte_len(value) + 1 > lim:
+                        problems.append(f'{src}:{num}: {lab} 超字节上限 '
+                                        f'({byte_len(value)+1} > {lim}): {key[:40]} @ {f}')
 
     # 4. 陈旧条目
-    stale = [(n, k) for n, k, _ in entries if k not in sources]
+    stale = []
+    for key, value, num, src, scope in entries:
+        if key not in sources:
+            stale.append((src, num, key))
+        elif scope and scope not in sources[key]:
+            stale.append((src, num, f'{key}（@file {scope} 中已不存在）'))
     if stale:
         print(f'\n陈旧条目 {len(stale)} 条（原文本在源码中已不存在）:')
-        for n, k in stale[:40]:
-            print(f'   {table}:{n}: {k[:70]}')
+        for src, num, key in stale[:40]:
+            print(f'   {src}:{num}: {key[:70]}')
         if len(stale) > 40:
             print(f'   ...另有 {len(stale) - 40} 条')
-        print('\n上游若改写了这些文案，对应译文已静默回退为英文（构建不会报错）。')
-        print('处理方式：按新文案补一条表项，再删掉陈旧那条。')
+        print('\n上游若改写了这些文案，对应译文已静默回退为英文（构建不会报错）。'
+              '\n处理方式：按新文案补一条表项，再删掉陈旧那条。')
 
     # 5. 跨文件影响
     if show_impact:
-        outside = {k: sorted(f for f in sources.get(k, ()) if f != 'src/strings.c')
-                   for _, k, _ in entries}
-        outside = {k: v for k, v in outside.items() if v}
+        outside = {}
+        for key, value, num, src, scope in entries:
+            others = sorted(f for f in sources.get(key, ()) if f != 'src/strings.c')
+            if others:
+                outside[key] = others
         print(f'\n除 src/strings.c 外还会被翻译的条目: {len(outside)}')
-        for k in sorted(outside, key=lambda s: len(s)):
+        for k in sorted(outside, key=len):
             print(f'   {k!r:44s} -> {outside[k][:4]}')
 
     print()

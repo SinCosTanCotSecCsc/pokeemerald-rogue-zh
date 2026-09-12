@@ -190,7 +190,7 @@ int StringParser::ParseString(long srcPos, unsigned char* dest, int& destLength)
             RaiseError("unterminated string literal");
 
         std::string sourceText(m_buffer + start + 1, end - start - 1);
-        const std::string* translated = g_translation->Lookup(sourceText);
+        const std::string* translated = g_translation->Lookup(sourceText, m_filename);
 
         if (translated != nullptr)
         {

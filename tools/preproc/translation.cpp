@@ -93,7 +93,9 @@ Translation* Translation::Load(const std::string& charmapPath)
 
     Translation* translation = new Translation();
 
-    if (!translation->LoadFile(path))
+    std::vector<std::string> includeStack;
+
+    if (!translation->LoadFile(path, includeStack))
     {
         delete translation;
         return nullptr;
@@ -102,17 +104,27 @@ Translation* Translation::Load(const std::string& charmapPath)
     return translation;
 }
 
-bool Translation::LoadFile(const std::string& path)
+bool Translation::LoadFile(const std::string& path, std::vector<std::string>& includeStack)
 {
+    for (std::size_t i = 0; i < includeStack.size(); i++)
+    {
+        if (includeStack[i] == path)
+            FATAL_ERROR("%s: circular @include\n", path.c_str());
+    }
+
     std::string text;
 
     if (!ReadWholeFile(path, text))
         return false;
 
-    m_path = path;
+    if (m_path.empty())
+        m_path = path;
+
+    includeStack.push_back(path);
 
     std::size_t pos = 0;
     long lineNum = 0;
+    std::string scope;   // 当前 @file 限定的文件名；空表示全局
 
     while (pos <= text.size())
     {
@@ -131,7 +143,50 @@ bool Translation::LoadFile(const std::string& path)
         std::size_t cursor = 0;
         SkipBlanks(line, cursor);
 
-        if (cursor >= line.size() || line[cursor] == '#' || line[cursor] == '@')
+        if (cursor >= line.size() || line[cursor] == '#')
+            continue;
+
+        // @include "其它表文件"：路径相对于当前文件所在目录
+        if (line.compare(cursor, 8, "@include") == 0)
+        {
+            cursor += 8;
+            SkipBlanks(line, cursor);
+
+            std::string included = ReadQuoted(line, cursor, path, lineNum);
+
+            std::size_t slash = path.find_last_of("/\\");
+            std::string dir = (slash == std::string::npos) ? std::string() : path.substr(0, slash + 1);
+
+            if (!LoadFile(dir + included, includeStack))
+                FATAL_ERROR("%s:%ld: cannot open included file \"%s\"\n",
+                            path.c_str(), lineNum, included.c_str());
+
+            continue;
+        }
+
+        // @file "路径"：其后条目只对该文件生效；@file 单独一行则恢复全局
+        if (line.compare(cursor, 5, "@file") == 0)
+        {
+            cursor += 5;
+            SkipBlanks(line, cursor);
+
+            if (cursor >= line.size())
+            {
+                scope.clear();
+            }
+            else
+            {
+                scope = ReadQuoted(line, cursor, path, lineNum);
+
+                SkipBlanks(line, cursor);
+                if (cursor < line.size() && line[cursor] != '#' && line[cursor] != '@')
+                    FATAL_ERROR("%s:%ld: unexpected trailing text after @file\n", path.c_str(), lineNum);
+            }
+
+            continue;
+        }
+
+        if (line[cursor] == '@')   // 其它 @ 开头的行是注释
             continue;
 
         std::string key = ReadQuoted(line, cursor, path, lineNum);
@@ -151,18 +206,41 @@ bool Translation::LoadFile(const std::string& path)
         if (cursor < line.size() && line[cursor] != '#' && line[cursor] != '@')
             FATAL_ERROR("%s:%ld: unexpected trailing text\n", path.c_str(), lineNum);
 
-        if (m_entries.find(key) != m_entries.end())
-            FATAL_ERROR("%s:%ld: duplicate entry for \"%s\"\n", path.c_str(), lineNum, key.c_str());
-
         // 存成带引号的字面量，调用方可直接用 ParseString 解析
-        m_entries[key] = "\"" + value + "\"";
+        std::string literal = "\"" + value + "\"";
+
+        if (scope.empty())
+        {
+            if (m_entries.find(key) != m_entries.end())
+                FATAL_ERROR("%s:%ld: duplicate entry for \"%s\"\n", path.c_str(), lineNum, key.c_str());
+            m_entries[key] = literal;
+        }
+        else
+        {
+            std::string scoped = scope + '\n' + key;
+            if (m_scopedEntries.find(scoped) != m_scopedEntries.end())
+                FATAL_ERROR("%s:%ld: duplicate entry for \"%s\" under @file %s\n",
+                            path.c_str(), lineNum, key.c_str(), scope.c_str());
+            m_scopedEntries[scoped] = literal;
+        }
     }
 
+    includeStack.pop_back();
     return true;
 }
 
-const std::string* Translation::Lookup(const std::string& sourceText) const
+const std::string* Translation::Lookup(const std::string& sourceText, const std::string& filename) const
 {
+    // 先看 @file 限定条目
+    if (!filename.empty())
+    {
+        std::string scoped = filename + '\n' + sourceText;
+        std::unordered_map<std::string, std::string>::const_iterator sit = m_scopedEntries.find(scoped);
+
+        if (sit != m_scopedEntries.end())
+            return &sit->second;
+    }
+
     std::unordered_map<std::string, std::string>::const_iterator it = m_entries.find(sourceText);
 
     if (it == m_entries.end())

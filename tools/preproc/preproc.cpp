@@ -25,6 +25,7 @@
 #include "c_file.h"
 #include "charmap.h"
 #include "translation.h"
+#include "translation.h"
 
 Charmap* g_charmap;
 
@@ -140,6 +141,9 @@ int main(int argc, char **argv)
     }
 
     g_charmap = new Charmap(argv[2]);
+
+    // 本地化：与 charmap 同目录的 translations/zh_CN.txt（不存在则不翻译）
+    g_translation = Translation::Load(argv[2]);
 
     // 本地化：与 charmap 同目录的 translations/zh_CN.txt（不存在则不翻译）
     g_translation = Translation::Load(argv[2]);

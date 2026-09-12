@@ -264,7 +264,7 @@ int AsmFile::ReadString(unsigned char* s)
     SkipWhitespace();
 
     int length;
-    StringParser stringParser(m_buffer, m_size);
+    StringParser stringParser(m_buffer, m_size, m_filename.c_str());
 
     try
     {
