@@ -1,5 +1,7 @@
 # Pokémon Emerald
 
+> **本仓库为简体中文汉化版。** 编译方法、分支说明、上游更新流程与译文维护方式请见 **[I18N.md](I18N.md)**。
+
 This is a decompilation of Pokémon Emerald.
 
 It builds the following ROM:
