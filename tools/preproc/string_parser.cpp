@@ -21,8 +21,10 @@
 #include <cstdio>
 #include <cstdarg>
 #include <stdexcept>
+#include <vector>
 #include "preproc.h"
 #include "string_parser.h"
+#include "translation.h"
 #include "char_util.h"
 #include "utf8.h"
 
@@ -174,6 +176,33 @@ int StringParser::ParseString(long srcPos, unsigned char* dest, int& destLength)
         RaiseError("expected UTF-8 string literal");
 
     long start = m_pos;
+
+    // 本地化：源字符串若在翻译表中登记，则改为解析译文。
+    // 返回值仍是原字面量占用的字节数，调用方的 m_pos 推进不受影响。
+    if (g_translation != nullptr)
+    {
+        long end = start + 1;
+
+        while (end < m_size && m_buffer[end] != '"')
+            end += (m_buffer[end] == '\\') ? 2 : 1;
+
+        if (end >= m_size)
+            RaiseError("unterminated string literal");
+
+        std::string sourceText(m_buffer + start + 1, end - start - 1);
+        const std::string* translated = g_translation->Lookup(sourceText);
+
+        if (translated != nullptr)
+        {
+            std::vector<char> buffer(translated->begin(), translated->end());
+            buffer.push_back('\0');
+
+            StringParser translatedParser(buffer.data(), (long)buffer.size() - 1);
+            translatedParser.ParseString(0, dest, destLength);
+
+            return (int)(end + 1 - start);
+        }
+    }
 
     m_pos++;
 

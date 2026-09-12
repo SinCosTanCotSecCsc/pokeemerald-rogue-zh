@@ -346,6 +346,12 @@ ifeq ($(COMPARE),1)
 	@$(SHA1) rom.sha1
 endif
 
+# 本地化：文本在编译期由 tools/preproc 按 translations/ 下的表注入，
+# 所以译文改动必须触发全部文本重新编译。
+# 注意：必须放在上面「all: rom」之后，否则 make 会把第一个 .o 当成默认目标。
+# 表不存在时 $(wildcard) 展开为空，等效于没有这一行。
+$(OBJS): $(wildcard translations/*.txt)
+
 # For contributors to make sure a change didn't affect the contents of the ROM.
 compare: all
 
