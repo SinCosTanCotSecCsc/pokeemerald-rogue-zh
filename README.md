@@ -1,5 +1,7 @@
 # pokeemerald-expansion
 
+> **本仓库为简体中文汉化版。** 编译方法、分支说明、上游更新流程与译文维护方式请见 **[I18N.md](I18N.md)**。
+
 ## What is pokeemerald-expansion?
 
 pokeemerald-expansion is a decomp hack base project based off pret's [pokeemerald](https://github.com/pret/pokeemerald) decompilation project. It's recommended that any new projects that plan on using it, to clone this repository instead of pret's vanilla repository, as we regurlarly incorporate pret's documentation changes. This is ***NOT*** a standalone romhack, and as such, most features will be unavailable and/or unbalanced if played as is.
