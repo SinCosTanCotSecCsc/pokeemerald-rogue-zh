@@ -28,6 +28,7 @@
 #include "walda_phrase.h"
 #include "constants/event_objects.h"
 #include "constants/rgb.h"
+#include "chinese_text.h"
 
 enum {
     INPUT_NONE,
@@ -1830,12 +1831,22 @@ static u8 GetPreviousTextCaretPosition(void)
 static void DeleteTextCharacter(void)
 {
     u8 index;
+    u8 start;
     u8 keyRole;
 
     index = GetPreviousTextCaretPosition();
+
+    //汉字由两个字节组成，必须整体删除，否则会残留半个字符
+    if (index > 0 && IsChineseChar(sNamingScreen->textBuffer[index - 1], sNamingScreen->textBuffer[index], FONT_NORMAL, FALSE))
+        start = index - 1;
+    else
+        start = index;
+
+    sNamingScreen->textBuffer[start] = 0;
     sNamingScreen->textBuffer[index] = 0;
     DrawTextEntry();
     CopyBgTilemapBufferToVram(3);
+    sNamingScreen->textBuffer[start] = EOS;
     sNamingScreen->textBuffer[index] = EOS;
     keyRole = GetKeyRoleAtCursorPos();
 
@@ -1920,7 +1931,7 @@ static void NamingScreen_Dummy(u8 bg, u8 page)
 static void DrawTextEntry(void)
 {
     u8 i;
-    u8 temp[2];
+    u8 temp[3];
     u16 extraWidth;
     u8 maxChars = sNamingScreen->template->maxChars;
     u16 x = sNamingScreen->inputCharBaseXPos - 0x40;
@@ -1929,11 +1940,25 @@ static void DrawTextEntry(void)
 
     for (i = 0; i < maxChars; i++)
     {
-        temp[0] = sNamingScreen->textBuffer[i];
-        temp[1] = gText_ExpandedPlaceholder_Empty[0];
-        extraWidth = (IsWideLetter(temp[0]) == TRUE) ? 2 : 0;
+        //汉字占两个字节，但仍各占一个 8 像素槽位，
+        //这样槽位索引与字节索引一致，光标（下划线）无需额外处理
+        if (i + 1 < maxChars && IsChineseChar(sNamingScreen->textBuffer[i], sNamingScreen->textBuffer[i + 1], FONT_NORMAL, FALSE))
+        {
+            temp[0] = sNamingScreen->textBuffer[i];
+            temp[1] = sNamingScreen->textBuffer[i + 1];
+            temp[2] = gText_ExpandedPlaceholder_Empty[0];
 
-        AddTextPrinterParameterized(sNamingScreen->windows[WIN_TEXT_ENTRY], FONT_NORMAL, temp, i * 8 + x + extraWidth, 1, TEXT_SKIP_DRAW, NULL);
+            AddTextPrinterParameterized(sNamingScreen->windows[WIN_TEXT_ENTRY], FONT_NORMAL, temp, i * 8 + x, 1, TEXT_SKIP_DRAW, NULL);
+            i++;
+        }
+        else
+        {
+            temp[0] = sNamingScreen->textBuffer[i];
+            temp[1] = gText_ExpandedPlaceholder_Empty[0];
+            extraWidth = (IsWideLetter(temp[0]) == TRUE) ? 2 : 0;
+
+            AddTextPrinterParameterized(sNamingScreen->windows[WIN_TEXT_ENTRY], FONT_NORMAL, temp, i * 8 + x + extraWidth, 1, TEXT_SKIP_DRAW, NULL);
+        }
     }
 
     TryDrawGenderIcon();
