@@ -578,6 +578,9 @@ bool8 Rogue_InBattleChoosingMoves();
 static void ShowQuestPopup(void);
 static void HideQuestPopUpWindow(void);
 
+static u8 GetPopupWindowWidth(struct PopupRequest* popupRequest);
+static u8* ExpandPopupString(u8 const* text, u8 textCapacity);
+
 static u8 GetActiveOnScreenDisplayTimer();
 static void Task_QuestPopUpWindow(u8 taskId);
 static void ShowQuestPopUpWindow(void);
@@ -635,6 +638,7 @@ static void RemoveQuestPopUpWindow(void)
 static u8 AddQuestPopUpWindow(struct PopupRequest* request)
 {
     struct PopupRequestTemplate const* template = &sPopupRequestTemplates[request->templateId];
+    u8 width = GetPopupWindowWidth(request);
     sRoguePopups.hasPopupBeenSkipped = FALSE;
     sRoguePopups.forceInstantSkip = FALSE;
 
@@ -644,7 +648,7 @@ static u8 AddQuestPopUpWindow(struct PopupRequest* request)
         gMain.inBattle ? 1 : 0, 
         template->left,
         template->down,
-        template->width,
+        width,
         template->height, 
         15,
         0x107
@@ -661,7 +665,7 @@ static u8 AddQuestPopUpWindow(struct PopupRequest* request)
             template->iconWidth,
             template->iconHeight, 
             13,
-            0x107 + (template->width * template->height)
+            0x107 + (width * template->height)
         );
     }
 
@@ -1106,24 +1110,9 @@ static void HideQuestPopUpWindow(void)
 //    }
 //}
 
-static void PrintPopupText( struct PopupRequest* popupRequest, u8 font, u8 const* text, u8 textCapacity, u8 x, u8 y)
+//把文本里的占位符（{STR_VAR_1} 等，由 ExpandPopupText 填好）展开到 gStringVar4
+static u8* ExpandPopupString(u8 const* text, u8 textCapacity)
 {
-    struct PopupRequestTemplate const* template = &sPopupRequestTemplates[popupRequest->templateId];
-
-    u8 colours[] = 
-    {
-        gFonts[font].bgColor, 
-        gFonts[font].fgColor, 
-        gFonts[font].shadowColor, 
-    };
-
-    if(template->transparentText)
-    {
-        colours[0] = TEXT_COLOR_TRANSPARENT;
-        colours[1] = TEXT_COLOR_WHITE;
-        colours[2] = TEXT_COLOR_DARK_GRAY;
-    }
-
     if(textCapacity == 0)
     {
         StringExpandPlaceholders(gStringVar4, text);
@@ -1139,8 +1128,60 @@ static void PrintPopupText( struct PopupRequest* popupRequest, u8 font, u8 const
         StringExpandPlaceholders(gStringVar4, buffer);
     }
 
-    x += GetStringCenterAlignXOffset(FONT_NARROW, gStringVar4, template->width * 8);
-    AddTextPrinterParameterized3(GetQuestPopUpWindowId(), font, x, y, colours, TEXT_SKIP_DRAW, gStringVar4);
+    return gStringVar4;
+}
+
+//弹窗模板的宽度是按拉丁字母（6px 宽）定的，汉字是 12px（FONT_SMALL 下 10px）。
+//道具弹窗只有 10 格 = 80px，而「赫拉克罗斯进化石」要 96px，
+//超出的字会被文字引擎画到窗口的下一行（即越过弹窗），故按实际文本撑开窗口。
+static u8 GetPopupWindowWidth(struct PopupRequest* popupRequest)
+{
+    struct PopupRequestTemplate const* template = &sPopupRequestTemplates[popupRequest->templateId];
+    u8 width = template->width;
+    u8 textWidth;
+
+    if(popupRequest->titleText != NULL)
+    {
+        textWidth = GetStringWidth(FONT_NARROW, ExpandPopupString(popupRequest->titleText, popupRequest->titleTextCapacity), 0);
+        if(textWidth > width * 8)
+            width = (textWidth + 7) / 8;
+    }
+
+    if(popupRequest->subtitleText != NULL)
+    {
+        textWidth = GetStringWidth(FONT_SMALL, ExpandPopupString(popupRequest->subtitleText, 0), 0);
+        if(textWidth > width * 8)
+            width = (textWidth + 7) / 8;
+    }
+
+    //窗口自模板的 left 起向右伸展，不能越过屏幕右缘
+    if(width > (DISPLAY_WIDTH / 8) - template->left)
+        width = (DISPLAY_WIDTH / 8) - template->left;
+
+    return width;
+}
+
+static void PrintPopupText( struct PopupRequest* popupRequest, u8 font, u8 const* text, u8 textCapacity, u8 x, u8 y)
+{
+    struct PopupRequestTemplate const* template = &sPopupRequestTemplates[popupRequest->templateId];
+    u8* str = ExpandPopupString(text, textCapacity);
+
+    u8 colours[] = 
+    {
+        gFonts[font].bgColor, 
+        gFonts[font].fgColor, 
+        gFonts[font].shadowColor, 
+    };
+
+    if(template->transparentText)
+    {
+        colours[0] = TEXT_COLOR_TRANSPARENT;
+        colours[1] = TEXT_COLOR_WHITE;
+        colours[2] = TEXT_COLOR_DARK_GRAY;
+    }
+
+    x += GetStringCenterAlignXOffset(font, str, GetWindowAttribute(GetQuestPopUpWindowId(), WINDOW_WIDTH) * 8);
+    AddTextPrinterParameterized3(GetQuestPopUpWindowId(), font, x, y, colours, TEXT_SKIP_DRAW, str);
 }
 
 static void ExpandPopupText(struct PopupRequest* popup)
@@ -1194,6 +1235,9 @@ static void ShowQuestPopUpWindow(void)
         //ShowBg(1);
     }
 
+    //窗口宽度取决于展开后的文本（如道具名），必须先填好 gStringVar1-3
+    ExpandPopupText(popupRequest);
+
     AddQuestPopUpWindow(popupRequest);
 
     PutWindowTilemap(GetQuestPopUpWindowId());
@@ -1203,8 +1247,6 @@ static void ShowQuestPopUpWindow(void)
 
     if(template->generateBorder != FALSE)
         DrawStdWindowFrame(GetQuestPopUpWindowId(), FALSE);
-
-    ExpandPopupText(popupRequest);
 
     if(popupRequest->titleText != NULL)
         PrintPopupText(popupRequest, FONT_NARROW, popupRequest->titleText, popupRequest->titleTextCapacity, 0, 1);
