@@ -236,3 +236,12 @@ Misty Terrain,\n	薄雾场地上会提高，\n
 # 末条只留「持续一场对战。」，两边都通顺。
 critical-hit ratio\n	击中要害的概率，\n
 during one battle.	持续一场对战。
+
+# ---------------------------------------------------------------- 说明与实际效果不符
+# 暗袭要害（Night Slash，src/data/text/move_descriptions.h 的 sNightSlashDescription）
+# 两条 movetable 里 priority 都是 0（src/data/battle_moves.h / battle_moves_revised.h），
+# 招式本身没有先制效果。上游英文写的是 "Hits as soon as possible."（暗示先制），
+# 原译照译成「必定能够先制攻击。」，玩家一旦用出来就会发现和实际不符。
+# 英文属上游源码，改动会引入合并冲突，只能由译文退一步：只保留「尽快」的语感，
+# 去掉先制的断言（"High critical-hit ratio." 那条保持「容易击中要害。」不动）。
+Hits as soon as possible.\n	能尽快发动攻击。\n

@@ -5992,7 +5992,7 @@
 "Hit {B_BUFF1} time(s)!" = "命中了{B_BUFF1}次！"
 "Hits Ghost-type Pokémon." = "可以击中幽灵属性宝可梦。"
 "Hits a foe with psychic\n" = "用精神能量攻击对手，\n"
-"Hits as soon as possible.\n" = "必定能够先制攻击。\n"
+"Hits as soon as possible.\n" = "能尽快发动攻击。\n"
 "Hits hard and first.\n" = "先制并猛烈攻击，\n"
 "Hits target with splashes\n" = "用水花连续\n"
 "Hits the foe with an icy\n" = "用冰冷的\n"
