@@ -8068,3 +8068,20 @@ EMOJI_BIGANGER = F9 FE
 
 @ 补充符号与生僻字（由 tools/add_glyphs.py 追加）
 '椪' = 1E6B
+
+@ 等价映射（全角字母等，复用半角字形；由 tools/add_glyphs.py 追加）
+'Ｃ' = BD
+'Ｎ' = C8
+
+@ 补充符号与生僻字（由 tools/add_glyphs.py 追加）
+'「' = 1E6C
+'」' = 1E6D
+'（' = 1E6E
+'）' = 1E6F
+'焗' = 1E70
+'鲹' = 1E71
+'呣' = 1E72
+'菈' = 1E73
+'榅' = 1E74
+'桲' = 1E75
+'＋' = 1E76

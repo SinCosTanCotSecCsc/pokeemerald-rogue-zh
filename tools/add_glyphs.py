@@ -79,17 +79,34 @@ def load_charmap():
     return path, lines, known, max_code
 
 
+INCLUDE = re.compile(r'^@include\s+"([^"]+)"')
+
+
 def scan_texts():
-    """译文里用到的所有字符（按出现顺序）。"""
+    """所有表文件译文里用到的字符（按出现顺序）。
+
+    入口是 zh_CN.txt，它通过 @include 引入名称表、手工表、文本表；
+    必须跟着 @include 走，否则新加的表里的字不会被补进字库。
+    """
     out = []
-    for name in ('zh_CN_names.txt', 'zh_CN.txt'):
-        p = REPO / 'translations' / name
-        if not p.exists():
-            continue
-        for line in p.read_text(encoding='utf-8').splitlines():
-            m = re.match(r'^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"', line.strip())
+    seen_files = set()
+
+    def walk(path):
+        path = pathlib.Path(path).resolve()
+        if path in seen_files:
+            return
+        seen_files.add(path)
+        for line in path.read_text(encoding='utf-8').splitlines():
+            s = line.strip()
+            m = INCLUDE.match(s)
             if m:
-                out += list(m.group(2))
+                walk(path.parent / m.group(1))
+                continue
+            m = re.match(r'^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"', s)
+            if m:
+                out.extend(m.group(2))
+
+    walk(REPO / 'translations' / 'zh_CN.txt')
     return out
 
 

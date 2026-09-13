@@ -124,19 +124,23 @@ def load_table(path, entries=None, stack=None, problems=None):
 
 
 def scan_sources():
+    """{字面量: {出现的文件}}。
+
+    必须用 tools/i18n_scan 的括号配平扫描，不能用单个正则 —— 长文本写成多个
+    相邻字面量（_("甲\n" "乙.")），只匹配第一个会把续行误判成「陈旧条目」。
+    """
+    sys.path.insert(0, str(REPO / 'tools'))
+    import i18n_scan
+
     hits = collections.defaultdict(set)
     for path in REPO.rglob('*'):
         if path.suffix not in {'.c', '.h', '.inc', '.s', '.pory'}:
             continue
-        if '.git' in path.parts or 'build' in path.parts or 'tools' in path.parts:
-            continue
-        try:
-            text = path.read_text(encoding='utf-8')
-        except (UnicodeDecodeError, OSError):
+        if any(p in {'.git', 'build', 'tools', 'translations'} for p in path.parts):
             continue
         rel = str(path.relative_to(REPO))
-        for m in STRING_LITERAL.finditer(text):
-            hits[m.group(1) if m.group(1) is not None else m.group(2)].add(rel)
+        for lit in i18n_scan.scan_file(path):
+            hits[lit].add(rel)
     return hits
 
 

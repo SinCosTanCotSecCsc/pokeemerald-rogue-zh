@@ -52,3 +52,7 @@ pokeemerald-*.png
 # Python
 __pycache__/
 *.pyc
+
+# 汉化批处理的中间产物（最终产物是 translations/zh_CN_text.txt）
+translations/_work/
+translations/_work/.snapshots/

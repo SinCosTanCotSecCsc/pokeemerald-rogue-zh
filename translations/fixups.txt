@@ -1,0 +1,67 @@
+# 手工修正表
+#
+# 格式：英文原文 <TAB> 中文译文（真正的制表符分隔；\n \l \p 写作两个字符的反斜杠+n）
+# 这些条目在每次 `tools/i18n_batch.py import` 时**覆盖**批次产出的译文。
+# 直接改 translations/zh_CN_text.txt 会在下次回收时丢失，纠正必须写在这里。
+#
+# 用途：
+#   1. 修正批次译文里的错误（控制码增减、超长、译名不当）
+#   2. 跨文件共用片段只能有一个译法，冲突时在此裁决
+#   3. 受长度上限约束的名称
+
+# ---------------------------------------------------------------- 控制码位置
+# 相邻字面量在游戏里拼接显示，但**每个字面量是独立的编译期字符串**。
+# 把控制码挪进相邻片段会让该片段在别处的使用行为异常，故一律留在原片段。
+
+You may only take in {STR_VAR_1}\n	你最多只能带入{STR_VAR_1}只\n
+Pokémon into this type of Adventure.\p	宝可梦参加这种冒险。\p
+You can change your settings from\n	你可以随时更改设置，\n
+wherever you are in {POKEMON_HUB}, or\l	无论你在{POKEMON_HUB}的哪里，\l
+Aronia	野樱莓
+Catmon	五桠果
+JesseJames	杰西詹姆
+Naples Fig	那不勒斯
+Xoconostle	仙人掌果
+already before.\p	就已经跟我说过了。\p
+What item would be good for\n	什么道具比较好，\n
+{STR_VAR_1} to hold?\p	适合{STR_VAR_1}携带吗？\p
+You told me about the {STR_VAR_1}\l	你之前就告诉过我{STR_VAR_1}\l
+
+# ---------------------------------------------------------------- 训练家名长度
+# 对战开拓区训练家的 trainerName 是 u8[PLAYER_NAME_LENGTH+1] = 8 字节，
+# 即最多 3 个汉字（6 字节）+ EOS。超长会编译失败，故统一缩短为 3 字。
+ADRIAN	阿德里
+ALIVIA	阿利维
+ALONDRA	阿隆德
+AMELIA	艾米莉
+ANTONIO	安东尼
+BRADLEY	布拉德
+BREANNA	布里安
+BRIANA	布里安
+BROOKS	布鲁克
+CAITLIN	嘉德丽
+DOMINIC	多米尼
+EDUARDO	爱德华
+EMANUEL	伊曼纽
+EMILIA	艾米莉
+GRAHAM	格雷厄
+GREGORY	格雷戈
+GUSTAVO	古斯塔
+INGRID	英格丽
+JULIANA	朱莉安
+KRISTEN	克里斯
+LILIANA	莉莉安
+LIZBETH	莉兹贝
+MADDOX	马多克
+MANUEL	曼努埃
+MAXWELL	麦斯威
+MIRIAM	米丽娅
+NIKOLAS	尼古拉
+PATRICK	帕特里
+STUART	斯图特
+TRISTON	特里森
+VALERIA	瓦莱丽
+ADRIANA	阿德里
+ALEXAS	阿莱萨
+ALFREDO	弗雷德
+GABRIEL	加百列

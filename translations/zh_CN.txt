@@ -12,6 +12,7 @@
 
 @include "zh_CN_names.txt"
 @include "zh_CN_manual.txt"
+@include "zh_CN_text.txt"
 
 "                       POKéMON" = "                       宝可梦"
 "        .   lbs." = "        .   磅"
