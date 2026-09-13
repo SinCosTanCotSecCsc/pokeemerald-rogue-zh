@@ -352,6 +352,23 @@ endif
 # 表不存在时 $(wildcard) 展开为空，等效于没有这一行。
 $(OBJS): $(wildcard translations/*.txt)
 
+# 编译开关（EXPANSION / RELEASE / MODERN / TEST）只改变 CPPFLAGS / ASFLAGS /
+# PORYSCRIPTARGS 里的命令行标志，make 无法感知其变化；没有显式依赖时，切换开关
+# 会静默复用上一次构建的目标文件和 poryscript 生成脚本，产出开关混杂的 ROM。
+# 用内容为开关取值的戳记文件把这一依赖纳入依赖图：开关真的变了才触发重建。
+BUILD_CONFIG_STAMP := $(OBJ_BASE_DIR_NAME)/rogue_build_config
+
+$(BUILD_CONFIG_STAMP): Makefile
+	@mkdir -p $(dir $@)
+	@printf 'EXPANSION=%s\nRELEASE=%s\nMODERN=%s\nTEST=%s\n' '$(EXPANSION)' '$(RELEASE)' '$(MODERN)' '$(TEST)' > $@.tmp
+	@if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
+
+$(OBJS) $(TEST_OBJS): $(BUILD_CONFIG_STAMP)
+
+# 由 .pory 生成的脚本同样随开关变化。data/ 下另有手写提交、没有 .pory 来源的 .inc
+# （如 data/script_cmd_table.inc），它们不会出现在这里，因此不会误套 poryscript 规则。
+$(patsubst %.pory,%.inc,$(shell find data -type f -name '*.pory')): $(BUILD_CONFIG_STAMP)
+
 # For contributors to make sure a change didn't affect the contents of the ROM.
 compare: all
 
