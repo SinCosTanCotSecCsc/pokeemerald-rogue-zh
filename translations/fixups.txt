@@ -65,3 +65,7 @@ ADRIANA	阿德里
 ALEXAS	阿莱萨
 ALFREDO	弗雷德
 GABRIEL	加百列
+
+# 图鉴分类字段 categoryName[13] 只容 6 汉字，且代码不追加「宝可梦」后缀
+Meringue	泡沫奶油
+Soft Tissue	软体生物

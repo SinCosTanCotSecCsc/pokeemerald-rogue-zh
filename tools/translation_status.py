@@ -54,7 +54,8 @@ def load_table(path, glob, scoped, stack=None):
             continue
         m = TABLE_ENTRY.match(s)
         if m:
-            (scoped if scope else glob).add(m.group(1))
+            # 限定条目的键要带文件名前缀，与 is_translated 的查法一致
+            (scoped if scope else glob).add(f'{scope}\n{m.group(1)}' if scope else m.group(1))
     stack.pop()
 
 

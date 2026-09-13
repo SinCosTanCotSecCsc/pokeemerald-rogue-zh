@@ -77,7 +77,8 @@ def load_table_keys(path, glob, scoped, stack=None):
             continue
         m = TABLE_ENTRY.match(s)
         if m:
-            (scoped if scope else glob).add(m.group(1))
+            # 限定条目必须带文件名前缀，否则会被当成未翻译而重复导出
+            (scoped if scope else glob).add(f'{scope}\n{m.group(1)}' if scope else m.group(1))
     stack.pop()
 
 
@@ -191,8 +192,12 @@ def cmd_export(argv):
             lines = [f'# 批次 {bid}', f'# 来源: {rel}'] + TASK_HEADER + ref_lines(chunk) + chunk
             (WORK / f'{bid}.tsv').write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
-    (WORK / 'manifest.json').write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=1), encoding='utf-8')
+    # 合并进既有 manifest：分批补导（--first）时不能丢掉老批次的来源映射，
+    # 否则 cmd_import 会把老 .out.tsv 当成「不在 manifest 中」而拒收。
+    mpath = WORK / 'manifest.json'
+    merged = json.loads(mpath.read_text(encoding='utf-8')) if mpath.exists() else {}
+    merged.update(manifest)
+    mpath.write_text(json.dumps(merged, ensure_ascii=False, indent=1), encoding='utf-8')
 
     total = sum(v['count'] for v in manifest.values())
     print(f'导出 {len(manifest)} 批（{first} 起），共 {total} 条 -> {WORK}')
@@ -239,6 +244,42 @@ def normalize_translation(en, zh):
         return None
 
     return zh
+
+
+def load_other_tables():
+    """读取名称表与手工表的键，用于避免与它们重复。
+
+    preproc 遇到重复键会直接 FATAL_ERROR（全局重复、同 @file 下重复都算），
+    而本工具产出的表会被 @include 进同一个 zh_CN.txt，因此必须去重。
+    返回 (全局键 -> 译文, (文件, 键) -> 译文)。
+    """
+    glob, scoped = {}, {}
+    for name in ('zh_CN_names.txt', 'zh_CN_manual.txt'):
+        path = REPO / 'translations' / name
+        if not path.exists():
+            continue
+        scope = None
+        for line in path.read_text(encoding='utf-8').splitlines():
+            s = line.strip()
+            if not s or s.startswith('#'):
+                continue
+            m = INCLUDE.match(s)
+            if m:
+                continue
+            m = FILE_SCOPE.match(s)
+            if m:
+                scope = m.group(1) or None
+                continue
+            if s.startswith('@'):
+                continue
+            m = re.match(r'^"((?:[^"\\]|\\.)*)"\s*=\s*"(.*)"$', s)
+            if not m:
+                continue
+            if scope:
+                scoped[(scope, m.group(1))] = m.group(2)
+            else:
+                glob[m.group(1)] = m.group(2)
+    return glob, scoped
 
 
 def load_fixups():
@@ -326,6 +367,21 @@ def cmd_import(argv):
         else:
             globals_[en] = zh
 
+    # 去掉与名称表/手工表重复的条目；译法不同则报告，由 fixups.txt 裁决
+    other_glob, other_scoped = load_other_tables()
+    conflicts = []
+    for en in list(globals_):
+        if en in other_glob:
+            if other_glob[en] != globals_[en]:
+                conflicts.append(f'全局 {en!r}: 本表 {globals_[en]!r} vs 名称表 {other_glob[en]!r}')
+            del globals_[en]
+    for k in list(scoped_):
+        rel, en = k
+        if k in other_scoped:
+            if other_scoped[k] != scoped_[k]:
+                conflicts.append(f'{rel} {en!r}: 本表 {scoped_[k]!r} vs 名称表 {other_scoped[k]!r}')
+            del scoped_[k]
+
     lines = [
         '# 游戏内文本译文（由 tools/i18n_batch.py 生成，请勿手工编辑）',
         '#',
@@ -354,6 +410,10 @@ def cmd_import(argv):
 
     print(f'写入 {OUT_TABLE.relative_to(REPO)}: 全局 {len(globals_)} 条，'
           f'@file 限定 {len(scoped_)} 条')
+    if conflicts:
+        print(f'\n跳过 {len(conflicts)} 条与名称表重复且译法不同的条目（需在 fixups.txt 裁决）:')
+        for c in conflicts[:10]:
+            print('  ' + c)
     if stray:
         print('\n警告：以下批次含不属于本批来源的原文（很可能写错了文件）:')
         for bid, n in sorted(stray.items()):

@@ -34,6 +34,22 @@ BYTE_BUDGETS = [
     ('POKEMON_HUB_NAME_LENGTH', 15, '枢纽名'),
 ]
 
+# 结构体里定长的名称字段。这些字段按数组维度硬性截断，超长会编译失败
+# （报 "excess elements in array initializer"），且不像名称表那样有常量名可查，
+# 故在此显式登记：(字段名, 所有文件, 上限字节含 EOS, 说明)。
+# 上限取各声明处最紧的一档，宁严勿松。
+FIELD_BUDGETS = {
+    # u8 trainerName[PLAYER_NAME_LENGTH + 1] = 8 字节 -> 3 汉字
+    'trainerName': (8, '训练家名(对战开拓区)'),
+    # u8 speciesName[POKEMON_NAME_LENGTH + 1] = 11 字节 -> 5 汉字
+    'speciesName': (11, '宝可梦名'),
+    # const u8 name[ITEM_NAME_LENGTH] = 17 -> 8 汉字
+    'name': (17, '名称'),
+    # u8 categoryName[13] = 13 字节 -> 6 汉字（图鉴分类，代码不再追加「宝可梦」，
+    # 译名里要自带）
+    'categoryName': (13, '图鉴分类'),
+}
+
 STRING_LITERAL = re.compile(r'(?:_\(\s*"((?:[^"\\]|\\.)*)"|\.string\s+"((?:[^"\\]|\\.)*)")')
 BRACE_OR_ESCAPE = re.compile(r'\{[^}]*\}|\\[nlp]')
 TABLE_ENTRY = re.compile(r'^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"')
@@ -83,9 +99,41 @@ def load_control_placeholders():
     return required
 
 
-def byte_len(s):
-    full = set('：；？！，．、。《》—～“”‘’…')
-    return sum(2 if (ord(c) > 0x2E80 or c in full) else 1 for c in s)
+def load_constants():
+    """charmap 里的常量展开长度，如 POKEBLOCK -> 5 字节。
+
+    名称里常见 {PKMN}、{POKEBLOCK} 这类字形常量，它们展开成固定的字节序列，
+    长度与字面字符数（11）完全不同；按字面算会误判超长。
+    """
+    out = {}
+    for line in (REPO / 'charmap.txt').read_text(encoding='utf-8').splitlines():
+        body = line.split('@')[0].strip()
+        if not body or '=' not in body:
+            continue
+        k, v = body.rsplit('=', 1)
+        k, v = k.strip(), v.strip().split()
+        if not k or k.startswith("'") or v[0] == 'FD':
+            continue
+        out['{' + k + '}'] = len(v)
+    return out
+
+
+BRACE_TOKEN = re.compile(r'\{[A-Za-z_0-9]+\}')
+
+# 全角标点按 2 字节计
+_FULL = set('：；？！，．、。《》—～“”‘’…')
+
+
+def byte_len(s, constants=None):
+    if constants:
+        total = 0
+        pos = 0
+        for m in BRACE_TOKEN.finditer(s):
+            total += byte_len(s[pos:m.start()], None)
+            total += constants.get(m.group(0), len(m.group(0)))
+            pos = m.end()
+        return total + byte_len(s[pos:], None)
+    return sum(2 if (ord(c) > 0x2E80 or c in _FULL) else 1 for c in s)
 
 
 def load_table(path, entries=None, stack=None, problems=None):
@@ -154,6 +202,7 @@ def main():
         return 1
 
     allowed = load_charmap()
+    constants = load_constants()
     control_placeholders = load_control_placeholders()
     entries, problems = load_table(table)
     scoped_n = sum(1 for e in entries if e[4])
@@ -180,7 +229,33 @@ def main():
 
     # 3. 字节预算（按名称表实际声明所用常量判断）
     sources = scan_sources()
+    values_by_key = {}
+    for key, value, _n, _s, _sc in entries:
+        values_by_key.setdefault(key, value)
     budgets = dict((c, (lim, lab)) for c, lim, lab in BYTE_BUDGETS)
+
+    # 3a. 结构体定长字段
+    field_re = re.compile(r'\.(\w+)\s*=\s*_\("((?:[^"\\]|\\.)*)"\)')
+    for path in REPO.rglob('*'):
+        if path.suffix not in {'.c', '.h'} or any(
+                q in {'.git', 'build', 'tools', 'translations'} for q in path.parts):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except (UnicodeDecodeError, OSError):
+            continue
+        rel = str(path.relative_to(REPO))
+        for m in field_re.finditer(text):
+            field, key = m.group(1), m.group(2)
+            if field not in FIELD_BUDGETS or key not in values_by_key:
+                continue
+            lim, lab = FIELD_BUDGETS[field]
+            zh = values_by_key[key]
+            if byte_len(zh, constants) + 1 > lim:
+                line = text[:m.start()].count('\n') + 1
+                problems.append(f'{rel}:{line}: {lab} 超字节上限 '
+                                f'({byte_len(zh)+1} > {lim}): {key[:40]} -> {zh}')
+
     for key, value, num, src, scope in entries:
         for f in sources.get(key, ()):
             try:
@@ -192,7 +267,7 @@ def main():
                 const = m.group(1)
                 if const in budgets:
                     lim, lab = budgets[const]
-                    if byte_len(value) + 1 > lim:
+                    if byte_len(value, constants) + 1 > lim:
                         problems.append(f'{src}:{num}: {lab} 超字节上限 '
                                         f'({byte_len(value)+1} > {lim}): {key[:40]} @ {f}')
 
