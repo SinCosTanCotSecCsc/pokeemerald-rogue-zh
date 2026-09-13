@@ -2247,6 +2247,12 @@ void CreateCustomPokemartMenu(const u16 * buffer, u16 currency)
 
 static u8 const sString_NewItemIndicator[] = _("{SPARKLE_ICON}");
 
+//商店道具列表窗只有 15 格宽，且价格右对齐在同一行；完整译名「招式学习器 / 招式记录」
+//会挤掉价格，故商店用短前缀。这两个字面量只出现在本文件，
+//由 translations/zh_CN_manual.txt 的 @file "src/shop.c" 块译为「学习器 / 记录」。
+static const u8 sText_ShopTMPrefix[] = _("TM ");
+static const u8 sText_ShopTRPrefix[] = _("TR ");
+
 static void CopyShopItemName(u16 item, u8* name)
 {
     if (sMartInfo.martType == MART_TYPE_NORMAL || sMartInfo.martType == MART_TYPE_PURCHASE_ONLY || sMartInfo.martType == MART_TYPE_SINGLE_PURCHASE)
@@ -2254,11 +2260,11 @@ static void CopyShopItemName(u16 item, u8* name)
         if(sMartInfo.prevShopItemBits != NULL && !RogueMiscQuery_CheckStateCustom(item, sMartInfo.prevShopItemBits))
         {
             StringCopyN(name, sString_NewItemIndicator, ITEM_NAME_LENGTH + 4);
-            CopyItemNameN(item, name + 1, ITEM_NAME_LENGTH + 3);
+            CopyItemNameNWithPrefixes(item, name + 1, ITEM_NAME_LENGTH + 3, sText_ShopTMPrefix, gText_HMPrefix, sText_ShopTRPrefix);
         }
         else
         {
-            CopyItemNameN(item, name, ITEM_NAME_LENGTH + 4);
+            CopyItemNameNWithPrefixes(item, name, ITEM_NAME_LENGTH + 4, sText_ShopTMPrefix, gText_HMPrefix, sText_ShopTRPrefix);
         }
         return;
     }

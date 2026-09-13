@@ -109,3 +109,15 @@
 "generations 1 to 3 along with any\l" = "的宝可梦，以及它们后来\l"
 "future evolutions and forms added.\p" = "新增的进化和形态。\p"
 "So Classic is your preference?$" = "所以你想要经典模式？$"
+
+# 商店道具列表：TM/TR 用「学习器 / 记录」短前缀
+#
+# 商店列表窗宽 15 格（120px），名字从窗口内 x=8 起、价格右对齐到 120px，
+# 完整译名「招式学习器 / 招式记录」（5 汉字 = 60px）加上招式名会压到价格上，
+# 所以商店用短前缀。src/shop.c 里另有同内容的 "TM " / "TR " 字面量，
+# 与 src/strings.c 里那对（背包/PC/摘要等 75 处调用共用）互不影响：
+# @file 只作用于本文件，src/strings.c 的那份仍是「招式学习器 / 招式记录」。
+@file "src/shop.c"
+"TM " = "学习器"
+"TR " = "记录"
+@file

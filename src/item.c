@@ -252,6 +252,12 @@ static const u8 sText_Revised[] = _("{REVISED_EDIT}");
 
 void CopyItemNameN(u16 itemId, u8 *dst, u16 length)
 {
+    CopyItemNameNWithPrefixes(itemId, dst, length, gText_TMPrefix, gText_HMPrefix, gText_TRPrefix);
+}
+
+//前缀可传入：商店列表宽度有限，用短前缀（见 shop.c）以免挤掉右侧价格
+void CopyItemNameNWithPrefixes(u16 itemId, u8 *dst, u16 length, const u8 *tmpPrefix, const u8 *hmPrefix, const u8 *trPrefix)
+{
     if((itemId >= ITEM_TM01 && itemId <= ITEM_HM08) || (itemId >= ITEM_TR01 && itemId <= ITEM_TR50))
     {
         u16 moveId = ItemIdToBattleMoveId(itemId);
@@ -259,15 +265,15 @@ void CopyItemNameN(u16 itemId, u8 *dst, u16 length)
 
         if(itemId >= ITEM_TR01 && itemId <= ITEM_TR50)
         {
-            StringCopyN(dst, gText_TRPrefix, length);
+            StringCopyN(dst, trPrefix, length);
         }
         else if(itemId >= ITEM_HM01 && itemId <= ITEM_HM08)
         {
-            StringCopyN(dst, gText_HMPrefix, length);
+            StringCopyN(dst, hmPrefix, length);
         }
         else
         {
-            StringCopyN(dst, gText_TMPrefix, length);
+            StringCopyN(dst, tmpPrefix, length);
         }
 
         if(Rogue_HasMoveBeenRevised(moveId))
