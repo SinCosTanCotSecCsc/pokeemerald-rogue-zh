@@ -69,3 +69,132 @@ GABRIEL	加百列
 # 图鉴分类字段 categoryName[13] 只容 6 汉字，且代码不追加「宝可梦」后缀
 Meringue	泡沫奶油
 Soft Tissue	软体生物
+
+# ---------------------------------------------------------------- 招式描述片段
+# 招式描述在源码里按换行点拆成相邻的两条字面量，游戏里拼接显示。
+# 圆瞳（Baby-Doll Eyes）的第一条被翻成了第二条的内容，屏幕上是两行「在对手行动前」；
+# 两条必须合起来读作「降低对手的攻击，并抢在对手行动前。」故一并裁决。
+Lowers the foe's Attack\n	降低对手的攻击，\n
+before it can move.	并抢在对手行动前。
+
+# ---------------------------------------------------------------- 招式描述片段错译
+# move_descriptions.h 里每个招式描述是**一条** C 字符串，按换行点写成相邻的两个
+# 字面量，游戏里拼接显示。b0083~b0100 与 b0353~b0364 各只拿到半句，
+# 译文里出现「提高同伴招式的 / 同伴招式的威力。」这类重复或断句错误，故逐条重排。
+# 「An attack that gains power\n」「those with Plus or Minus.」
+# 「moves before the target.」被多个招式共用，译文对每个使用者都要通顺。
+# Revenge
+An attack that gains power\n	攻击的威力会提高，\n
+# Revenge
+if injured by the foe.	若自己被对手打伤。
+# Payback
+if the user moves last.	若自己后手行动。
+# Assurance
+if the foe has been hurt.	若对手已受过伤害。
+# Nuzzle
+the foe, paralyzing it.	使其麻痹。
+# DazzlingGleam
+a bright flash.	攻击全体对手。
+# Powder
+a Fire-type move.	造成伤害。
+# HelpingHand
+Boosts the power of the\n	提高同伴使出的\n
+# HelpingHand
+recipient's moves.	招式的威力。
+# Trick
+Tricks the foe into trading\n	欺骗对手，与其\n
+# Trick
+held items.	交换携带的道具。
+# Assist
+of the partner's moves.	招式。
+# AromaticMist
+partner Pokémon.	特防。
+# MagneticFlux
+Boosts the defenses of\n	提高防御，对象为\n
+# GearUp
+Boosts the attacks of\n	提高攻击，对象为\n
+# SmartStrike
+horn that never misses.	必定命中。
+# GlitzyGlow
+wall, lowering Sp. Atk damage.	降低特攻伤害。
+# BaddyBad
+wall, lowering Attack damage.	降低攻击伤害。
+# DoubleIronBash
+its arms. May cause flinch.	可能使对手畏缩。
+# BoltBeak/FishiousRend
+moves before the target.	威力翻倍。
+# SkitterSmack
+attack. Lowers foe's Sp. Atk.	并降低对手特攻。
+# Chloroblast
+A user-hurting blast of\n	聚集叶绿素攻击对手，\n
+# Chloroblast
+amassed chlorophyll.	自己也会受伤。
+# LunarBlessing
+itself and its ally.	并解除异常状态。
+# PopulationBomb
+to ten times in a row.	1到10次。
+# Snowscape
+lasts for five turns.	持续5回合。
+# SyrupBomb
+each turn for 3 turns.	降低对手速度。
+# TeraStarstorm
+Damages all opponents if user is\n	太乐巴戈斯处于星晶形态时，\n
+# TeraStarstorm
+Stellar form Terapagos.	攻击全体对手。
+# ExpandingForce
+all foes on Psychic Terrain.	攻击所有对手。
+# LastRespects
+for each defeated ally.	威力越高。
+# Return
+in power with friendship.	威力越大。
+# Conversion
+into a known move's type.	与已掌握的招式属性相同。
+# Psywave
+wave of varying intensity.	威力随机变化。
+# ElectricTerrain
+5 turns. Prevents sleep.	并防止睡眠。
+
+# ---------------------------------------------------------------- 道具/招式描述漏译「威力」
+# 类型强化类道具的描述在源码里按换行拆成三条例 S 字符串，末条只翻成了「X属性招式。」，
+# 漏掉英文里的 power（威力），如熏香：「携带后能略微提高水属性招式。」
+# 末条被多个道具共用（如 "Water-type moves." 由水滴石板/心之水滴/海之熏香/浪之熏香/
+# 神秘水滴 5 处共用），故在此统一补「威力」。
+# 行宽：图鉴/背包描述框 14 格 = 112px，文字从 x=3 起，每行最多 9 个汉字（108px），
+# 因此用「X属性招式威力。」（不带「的」）——带「的」会多 12px 被裁掉。
+# 超能力属性招式威力。= 114px 超宽，故把它拆到上一条字面量里（该两条为本招式独有）。
+Water-type moves.	水属性招式威力。
+Grass-type moves.	草属性招式威力。
+Rock-type moves.	岩石属性招式威力。
+Steel-type moves.	钢属性招式威力。
+Fire-type moves.	火属性招式威力。
+Ice-type moves.	冰属性招式威力。
+Poison-type moves.	毒属性招式威力。
+Ground-type moves.	地面属性招式威力。
+Flying-type moves.	飞行属性招式威力。
+Bug-type moves.	虫属性招式威力。
+Ghost-type moves.	幽灵属性招式威力。
+Dragon-type moves.	龙属性招式威力。
+Dark-type moves.	恶属性招式威力。
+Fairy-type moves.	妖精属性招式威力。
+tric-type moves.	电属性招式威力。
+ing-type moves.	格斗属性招式威力。
+chic-type moves.	招式威力。
+the power of Psy\n	能提高超能力属性\n
+Normal-type moves.	一般属性招式威力。
+physical moves.	物理招式威力。
+of special moves.	特殊招式威力。
+HP-stealing moves.	吸取ＨＰ招式威力。
+# 心之水滴：英文 "Latios' & Latias' Psychic and Dragon-type moves"，
+# 原译把 Psychic（超能力属性）当成了招式名「精神强念」。
+Latias' Psychic and\n	拉帝亚斯的超能力和\n
+# 恩可果：末条 "effective moves." 与达人带（A belt that boosts the power of super /
+# effective moves.）共用，达人带要「威力」、恩可果要「受到…时回复」，
+# 同一字面量只能有一个译法，故达人带暂缺「威力」，只先去掉本条的重复：
+# 原译「携带后受到效果绝佳的 / 效果绝佳的招式。」
+# 要两条都正确，只能改源码让这两处字面量不再相同（译名流水线按字符串内容查表）。
+heals from super\n	受到\n
+# 求雨/大晴天：英文按 "Water-\ntype moves for 5 turns." 断词，
+# 原译成了「提升水 / 属性的招式5回合内增强。」并漏掉威力。两条末句为二者共用。
+Boosts the power of Water-\n	提高水属性招式的威力，\n
+Boosts the power of Fire-\n	提高火属性招式的威力，\n
+type moves for 5 turns.	持续5回合。
