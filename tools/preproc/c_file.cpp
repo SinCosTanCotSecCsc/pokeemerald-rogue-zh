@@ -84,9 +84,12 @@ CFile::CFile(const char * filenameCStr, bool isStdin)
     m_pos = 0;
     m_lineNum = 1;
     m_isStdin = isStdin;
+
+    IndexLineMarkers();
 }
 
-CFile::CFile(CFile&& other) : m_filename(std::move(other.m_filename))
+CFile::CFile(CFile&& other) : m_filename(std::move(other.m_filename)),
+    m_lineMarkers(std::move(other.m_lineMarkers))
 {
     m_buffer = other.m_buffer;
     m_pos = other.m_pos;
@@ -100,6 +103,122 @@ CFile::CFile(CFile&& other) : m_filename(std::move(other.m_filename))
 CFile::~CFile()
 {
     free(m_buffer);
+}
+
+// 消除路径中的 "." 与 ".." 段，使不同写法的同一文件能对上。
+static std::string NormalizePath(const std::string& path)
+{
+    std::vector<std::string> parts;
+    std::size_t pos = 0;
+
+    while (pos <= path.size())
+    {
+        std::size_t slash = path.find('/', pos);
+        std::string part = path.substr(pos, slash == std::string::npos ? std::string::npos : slash - pos);
+
+        if (part == "..")
+        {
+            if (!parts.empty() && parts.back() != "..")
+                parts.pop_back();
+            else
+                parts.push_back(part);
+        }
+        else if (!part.empty() && part != ".")
+        {
+            parts.push_back(part);
+        }
+
+        if (slash == std::string::npos)
+            break;
+
+        pos = slash + 1;
+    }
+
+    std::string result;
+
+    for (std::size_t i = 0; i < parts.size(); i++)
+    {
+        if (i != 0)
+            result += '/';
+
+        result += parts[i];
+    }
+
+    return result;
+}
+
+// 扫描全部 "# <行号> \"<文件>\"" 行标记，建立位置索引。
+// 只认行首的 '#'，并容忍 "#line" 写法与行尾的标志位（如 "# 1 \"x.h\" 1"）。
+void CFile::IndexLineMarkers()
+{
+    for (long pos = 0; pos < m_size; pos++)
+    {
+        if (m_buffer[pos] != '#' || (pos != 0 && m_buffer[pos - 1] != '\n'))
+            continue;
+
+        long cursor = pos + 1;
+
+        while (cursor < m_size && (m_buffer[cursor] == ' ' || m_buffer[cursor] == '\t'))
+            cursor++;
+
+        if (m_size - cursor > 4 && std::strncmp(m_buffer + cursor, "line", 4) == 0
+            && (m_buffer[cursor + 4] == ' ' || m_buffer[cursor + 4] == '\t'))
+        {
+            cursor += 4;
+
+            while (cursor < m_size && (m_buffer[cursor] == ' ' || m_buffer[cursor] == '\t'))
+                cursor++;
+        }
+
+        long digitsStart = cursor;
+
+        while (cursor < m_size && m_buffer[cursor] >= '0' && m_buffer[cursor] <= '9')
+            cursor++;
+
+        if (cursor == digitsStart)
+            continue;
+
+        while (cursor < m_size && (m_buffer[cursor] == ' ' || m_buffer[cursor] == '\t'))
+            cursor++;
+
+        if (cursor >= m_size || m_buffer[cursor] != '"')
+            continue;
+
+        long nameStart = ++cursor;
+
+        while (cursor < m_size && m_buffer[cursor] != '"' && m_buffer[cursor] != '\n')
+            cursor++;
+
+        if (cursor >= m_size || m_buffer[cursor] != '"')
+            continue;
+
+        m_lineMarkers.push_back(std::make_pair(pos,
+            NormalizePath(std::string(m_buffer + nameStart, cursor - nameStart))));
+
+        pos = cursor;
+    }
+}
+
+// 返回位置 pos 处字符串的真实来源文件。行标记按位置递增，二分查找最后一个不晚于 pos 的。
+const std::string& CFile::OriginFileAt(long pos) const
+{
+    std::size_t lo = 0;
+    std::size_t hi = m_lineMarkers.size();
+
+    while (lo < hi)
+    {
+        std::size_t mid = lo + (hi - lo) / 2;
+
+        if (m_lineMarkers[mid].first <= pos)
+            lo = mid + 1;
+        else
+            hi = mid;
+    }
+
+    if (lo == 0)
+        return m_filename;
+
+    return m_lineMarkers[lo - 1].second;
 }
 
 void CFile::Preproc()
@@ -230,7 +349,7 @@ void CFile::TryConvertString()
         {
             unsigned char s[kMaxStringLength];
             int length;
-            StringParser stringParser(m_buffer, m_size, m_filename.c_str());
+            StringParser stringParser(m_buffer, m_size, OriginFileAt(m_pos).c_str());
 
             try
             {

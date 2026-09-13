@@ -25,6 +25,8 @@
 #include <cstdint>
 #include <string>
 #include <memory>
+#include <utility>
+#include <vector>
 #include "preproc.h"
 
 class CFile
@@ -43,6 +45,17 @@ private:
     long m_lineNum;
     std::string m_filename;
     bool m_isStdin;
+
+    // C 文件先经 C 预处理器展开，#include 进来的头文件内容也会出现在这里，
+    // 因此仅凭 m_filename 无法判断某个字符串究竟来自哪个文件（如 src/data/items.h
+    // 被 src/item.c 包含）。预处理器会为每次切换来源输出 "# <行号> \"<文件>\"" 行标记，
+    // 此处记录全部标记的位置，供按文件限定译文时还原真实来源。
+    std::vector<std::pair<long, std::string>> m_lineMarkers;
+
+    // 建立行标记索引；在构造函数读完文件后调用一次。
+    void IndexLineMarkers();
+    // 返回位置 pos 处字符串的真实来源文件；无标记时回退到 m_filename。
+    const std::string& OriginFileAt(long pos) const;
 
     bool ConsumeHorizontalWhitespace();
     bool ConsumeNewline();

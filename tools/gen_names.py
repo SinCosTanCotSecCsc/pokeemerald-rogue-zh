@@ -34,6 +34,18 @@ ALIASES = {
     'Mach Bike': 'Mach Bike',
 }
 
+# 道具名 "X Tera Shard" 在本作里被缩写为 "X Shard"，两个缩写更短（Elec./Fight.）。
+# 省略的是中间的词而非尾字符，模糊匹配对这种缩写极易给出别的道具名
+# （实测 "Fire Shard" 会匹配到 Red Shard 的「红色碎片」），故一律显式列出。
+# 注意 Red/Blue/Yellow/Green Shard 是真实存在的第三世代碎片，不在此列。
+for _shard in ('Bug', 'Dark', 'Dragon', 'Fairy', 'Fire', 'Flying', 'Ghost', 'Grass',
+               'Ground', 'Ice', 'Normal', 'Poison', 'Psychic', 'Rock', 'Steel',
+               'Stellar', 'Water'):
+    ALIASES[_shard + ' Shard'] = _shard + ' Tera Shard'
+
+ALIASES['Elec. Shard'] = 'Electric Tera Shard'
+ALIASES['Fight. Shard'] = 'Fighting Tera Shard'
+
 TABLES = [
     {
         'label': '宝可梦名',

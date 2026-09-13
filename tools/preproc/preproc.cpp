@@ -145,9 +145,6 @@ int main(int argc, char **argv)
     // 本地化：与 charmap 同目录的 translations/zh_CN.txt（不存在则不翻译）
     g_translation = Translation::Load(argv[2]);
 
-    // 本地化：与 charmap 同目录的 translations/zh_CN.txt（不存在则不翻译）
-    g_translation = Translation::Load(argv[2]);
-
     char* extension = GetFileExtension(argv[1]);
 
     if (!extension)

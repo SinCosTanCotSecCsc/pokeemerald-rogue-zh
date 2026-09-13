@@ -1,0 +1,85 @@
+# 手工补充的名词译名
+#
+# 这里收录 **PKHeX / PokeAPI / Pokémon Showdown 三个权威数据源都没有** 的条目，
+# 无法像 tools/gen_names.py 那样自动生成，故由人工确定，主要是：
+#   - 本作自定义的招式 / 特性 / 道具
+#   - Gen3 特有道具（官方中文化之前就已从游戏中移除）
+#
+# 语法与主表相同，另支持：
+#   @file "路径"                # 其后条目只对该文件生效
+#   @file                      # 单独一行，恢复为全局条目
+
+
+# ---------------------------------------------------------------- 招式
+@file "src/data/text/move_names.h"
+
+# 本作自定义招式（官方无对应）
+#
+# G-Smite：官方 G-Max Smite（布莉姆温专属极巨招式），妖精属性、使对手全体混乱。
+#   本作数据与该官方招式一致（src/data/battle_moves.h 的 MOVE_G_MAX_SMITE 为
+#   TYPE_FAIRY + MAX_EFFECT_CONFUSE_FOES），故采用官方译名。
+#   注意它**不是**通用妖精极巨招式 Max Starfall（极巨妖精），不要混用。
+"G-Smite" = "超极巨天谴雷诛"
+
+"Swirling Blade" = "旋风刃"
+"SwirlngBlade" = "旋风刃"
+
+@file
+
+# ---------------------------------------------------------------- 特性
+@file "src/data/text/abilities.h"
+
+# 描述："Weather moves go first."（天气类招式优先使出）
+"Instant Forecast" = "呼风唤雨"
+# 描述："Dragon moves are Bug + STAB."（龙属性招式获得虫属性加成）
+"Dragon Fly" = "龙虫同源"
+
+@file
+
+# ---------------------------------------------------------------- 道具
+@file "src/data/items.h"
+
+# 本作自定义道具
+"Rogue Ball" = "肉鸽球"
+"HM08" = "秘传学习器０８"
+
+# 名称里带 {PKMN} / {POKEBLOCK} 占位符的官方道具。
+# 这两个占位符是 charmap 常量，展开成拉丁字形的 "PKMN" / "POKéBLOCK"；
+# 中文没有缩写必要，按官方译名直接写出。
+# 生成器会跳过含占位符的名称（数据源里没有对应形式），故须手工补。
+"{PKMN} Box Link" = "宝可梦盒"
+"{POKEBLOCK} Case" = "宝可方块盒"
+
+# Gen3 邮件（官方中文化之前已移除，无官方译名，按颜色/材质直译）
+"Orange Mail" = "橙色邮件"
+"Harbor Mail" = "港口邮件"
+"Glitter Mail" = "闪光邮件"
+"Mech Mail" = "机械邮件"
+"Wood Mail" = "木质邮件"
+"Wave Mail" = "波浪邮件"
+"Bead Mail" = "珠串邮件"
+"Shadow Mail" = "暗影邮件"
+"Tropic Mail" = "热带邮件"
+"Dream Mail" = "梦境邮件"
+"Fab Mail" = "华丽邮件"
+"Retro Mail" = "复古邮件"
+
+# Gen3 特有道具（官方中文化之前已移除，按语义直译）
+"Berry Pouch" = "树果袋"
+"Powder Jar" = "药粉罐"
+"Fame Checker" = "名人记事本"
+"Teachy TV" = "教学电视"
+"Mystic Ticket" = "神秘船票"
+"Aurora Ticket" = "极光船票"
+"Old Sea Map" = "古老海图"
+"Magma Emblem" = "熔岩徽记"
+"Bike Voucher" = "自行车兑换券"
+"Tri-Pass" = "三岛船票"
+"Rainbow Pass" = "彩虹船票"
+"Berserk Gene" = "狂暴基因"
+
+# Gen3 宝石
+"Ruby" = "红宝石"
+"Sapphire" = "蓝宝石"
+
+@file

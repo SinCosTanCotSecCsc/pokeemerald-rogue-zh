@@ -11,6 +11,7 @@
 # 以 # 或 @ 开头的行和空行会被忽略；重复的「源文本」会报错。
 
 @include "zh_CN_names.txt"
+@include "zh_CN_manual.txt"
 
 "                       POKéMON" = "                       宝可梦"
 "        .   lbs." = "        .   磅"
@@ -1435,7 +1436,7 @@
 "Your current Battle Points." = "你当前的对战点数。"
 "Your feeling at the battle's start" = "对战开始时你的心情"
 "Your party is full!" = "你的队伍已满！"
-"Your party's full!" = "你的队伍已满！"
+"Your party's full!{PAUSE_UNTIL_PRESS}" = "你的队伍已满！{PAUSE_UNTIL_PRESS}"
 "Your profile" = "你的简介"
 "Your record has been uploaded via\nWIRELESS COMMUNICATION." = "你的记录已通过\n无线通信上传。"
 "ZINC{CLEAR_TO 0x64}1BP" = "锌{CLEAR_TO 0x64}1BP"
@@ -1636,7 +1637,7 @@
 "{STR_VAR_1} happily ate the\n{STR_VAR_2}.{PAUSE_UNTIL_PRESS}" = "{STR_VAR_1}开心地吃掉了\n{STR_VAR_2}。{PAUSE_UNTIL_PRESS}"
 "{STR_VAR_1} has already been\nselected.{PAUSE_UNTIL_PRESS}" = "{STR_VAR_1}已经被\n选中了。{PAUSE_UNTIL_PRESS}"
 "{STR_VAR_1} has no energy\nleft to battle!{PAUSE_UNTIL_PRESS}" = "{STR_VAR_1}已经没有\n力气对战了！{PAUSE_UNTIL_PRESS}"
-"{STR_VAR_1} has survived poisoning…\p\n" = "{STR_VAR_1}扛住了中毒…\p\n"
+"{STR_VAR_1} survived the poisoning.\nThe poison faded away!\p" = "{STR_VAR_1}挺过了中毒。\n毒已经消退了！\p"
 "{STR_VAR_1} hatched from the Egg!" = "{STR_VAR_1}从蛋里孵化了！"
 "{STR_VAR_1} is already holding\none {STR_VAR_2}." = "{STR_VAR_1}已经携带了\n一个{STR_VAR_2}。"
 "{STR_VAR_1} is already holding\none {STR_VAR_2}.\pWould you like to switch the\ntwo items?" = "{STR_VAR_1}已经携带了\n一个{STR_VAR_2}。\p要交换这\n两件道具吗？"

@@ -299,7 +299,7 @@
 "Bug Buzz" = "虫鸣"
 "Bug Gem" = "虫之宝石"
 "Bug Memory" = "虫子存储碟"
-"Bug Shard" = "蓝色碎片"
+"Bug Shard" = "虫太晶碎块"
 "Buginium Z" = "虫Ｚ"
 "Buizel" = "泳圈鼬"
 "Bulbasaur" = "妙蛙种子"
@@ -541,6 +541,7 @@
 "Dark Gem" = "恶之宝石"
 "Dark Memory" = "黑暗存储碟"
 "Dark Pulse" = "恶之波动"
+"Dark Shard" = "恶太晶碎块"
 "Dark Void" = "暗黑洞"
 "Darkest Lariat" = "ＤＤ金勾臂"
 "Darkinium Z" = "恶Ｚ"
@@ -735,6 +736,7 @@
 "Ekans" = "阿柏蛇"
 "ElctrcTrrain" = "电气场地"
 "Eldegoss" = "白蓬蓬"
+"Elec. Shard" = "电太晶碎块"
 "Elecmrphosis" = "电力转换"
 "Electabuzz" = "电击兽"
 "Electirizer" = "电力增幅器"
@@ -846,6 +848,7 @@
 "Fidough" = "狗仔包"
 "Fiery Dance" = "火之舞"
 "Fiery Wrath" = "怒火中烧"
+"Fight. Shard" = "格斗太晶碎块"
 "Fighting Gem" = "格斗宝石"
 "Fightinium Z" = "格斗Ｚ"
 "FightngMemory" = "战斗存储碟"
@@ -863,7 +866,7 @@
 "Fire Memory" = "火焰存储碟"
 "Fire Pledge" = "火之誓约"
 "Fire Punch" = "火焰拳"
-"Fire Shard" = "红色碎片"
+"Fire Shard" = "火太晶碎块"
 "Fire Spin" = "火焰旋涡"
 "Fire Stone" = "火之石"
 "Firium Z" = "火Ｚ"
@@ -1341,7 +1344,6 @@
 "Ice Memory" = "冰雪存储碟"
 "Ice Punch" = "冰冻拳"
 "Ice Scales" = "冰鳞粉"
-"Ice Shard" = "冰砾"
 "Ice Spinner" = "冰旋"
 "Ice Stone" = "冰之石"
 "Icicle Crash" = "冰柱坠击"
@@ -2325,6 +2327,7 @@
 "Rock Incense" = "岩石薰香"
 "Rock Memory" = "岩石存储碟"
 "Rock Polish" = "岩石打磨"
+"Rock Shard" = "岩石太晶碎块"
 "Rock Slide" = "岩崩"
 "Rock Smash" = "碎岩"
 "Rock Throw" = "落石"
@@ -3293,6 +3296,10 @@
 "Zygarde Cube" = "基格尔德多面体"
 "Zygardite" = "基格尔德进化石"
 @file "src/data/items.h"
+"Ice Shard" = "冰太晶碎块"
+@file
+
+@file "src/data/items.h"
 "Metronome" = "节拍器"
 @file
 
@@ -3306,6 +3313,10 @@
 
 @file "src/data/text/move_names.h"
 "Decorate" = "装饰"
+@file
+
+@file "src/data/text/move_names.h"
+"Ice Shard" = "冰砾"
 @file
 
 @file "src/data/text/move_names.h"

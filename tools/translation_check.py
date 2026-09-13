@@ -55,6 +55,34 @@ def load_charmap():
     return chars
 
 
+def load_control_placeholders():
+    """返回「运行期控制码」占位符集合，如 {PLAYER} {STR_VAR_1}。
+
+    charmap 里的常量分两类：
+      - 展开为控制码（含字节 0xFD，如 PLAYER = FD 01）：游戏在运行期替换成
+        玩家名、变量值等，**必须**原样留在译文里，否则字符串会错乱。
+      - 展开为可见字形（如 POKEBLOCK = 55 56 57 58 59，即 "POKéBLOCK"）：
+        只是字面文本，翻译时可以整个换成中文。
+    只有前者需要校验占位符一致性。
+    """
+    required = set()
+    for line in (REPO / 'charmap.txt').read_text(encoding='utf-8').splitlines():
+        body = line.split('@')[0].strip()
+        if not body or '=' not in body:
+            continue
+        k, v = body.rsplit('=', 1)
+        k, v = k.strip(), v.strip().split()
+        if not k or k.startswith("'"):
+            continue
+        try:
+            seq = [int(b, 16) for b in v]
+        except ValueError:
+            continue
+        if 0xFD in seq:
+            required.add('{' + k + '}')
+    return required
+
+
 def byte_len(s):
     full = set('：；？！，．、。《》—～“”‘’…')
     return sum(2 if (ord(c) > 0x2E80 or c in full) else 1 for c in s)
@@ -64,7 +92,7 @@ def load_table(path, entries=None, stack=None, problems=None):
     """递归加载；条目为 (原文, 译文, 行号, 相对路径, 作用域)。"""
     if entries is None:
         entries, stack, problems = [], [], []
-    path = pathlib.Path(path)
+    path = pathlib.Path(path).resolve()
     if path in stack:
         problems.append(f'{path}: 循环 @include')
         return entries, problems
@@ -122,6 +150,7 @@ def main():
         return 1
 
     allowed = load_charmap()
+    control_placeholders = load_control_placeholders()
     entries, problems = load_table(table)
     scoped_n = sum(1 for e in entries if e[4])
     print(f'翻译表 {table}: {len(entries)} 条'
@@ -135,8 +164,13 @@ def main():
                             f'{"".join(bad)} (U+{", U+".join(f"{ord(c):04X}" for c in bad)})')
 
     # 2. 占位符 / 转义
+    #    转义（\n \l \p）与运行期控制码占位符必须与原文一致；
+    #    纯字形常量（如 {POKEBLOCK}）翻译时可换成中文，不作要求。
     for key, value, num, src, scope in entries:
-        want, got = BRACE_OR_ESCAPE.findall(key), BRACE_OR_ESCAPE.findall(value)
+        want = [t for t in BRACE_OR_ESCAPE.findall(key)
+                if not t.startswith('{') or t in control_placeholders]
+        got = [t for t in BRACE_OR_ESCAPE.findall(value)
+               if not t.startswith('{') or t in control_placeholders]
         if collections.Counter(want) != collections.Counter(got):
             problems.append(f'{src}:{num}: 占位符不一致\n      原文 {want}\n      译文 {got}')
 

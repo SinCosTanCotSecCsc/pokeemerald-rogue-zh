@@ -231,7 +231,7 @@ bool Translation::LoadFile(const std::string& path, std::vector<std::string>& in
 
 const std::string* Translation::Lookup(const std::string& sourceText, const std::string& filename) const
 {
-    // 先看 @file 限定条目
+    // 先看 @file 限定条目，其次全局条目
     if (!filename.empty())
     {
         std::string scoped = filename + '\n' + sourceText;
