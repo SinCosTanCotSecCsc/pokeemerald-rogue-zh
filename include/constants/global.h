@@ -106,7 +106,7 @@
 #define CONTEST_CATEGORIES_COUNT  5
 
 // string lengths
-#define ITEM_NAME_LENGTH 16 // increased
+#define ITEM_NAME_LENGTH 17 // increased（汉化：容纳 8 汉字的官方长名 + EOS）
 #define POKEMON_NAME_LENGTH 10
 #define POKEMON_NAME_BUFFER_SIZE max(20, POKEMON_NAME_LENGTH + 1) // Frequently used buffer size. Larger than necessary
 #define PLAYER_NAME_LENGTH 7

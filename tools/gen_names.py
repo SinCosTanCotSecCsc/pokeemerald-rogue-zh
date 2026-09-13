@@ -1,10 +1,12 @@
 """由权威开源数据生成宝可梦名称翻译表。
 
-数据源（两者在重叠部分 100% 一致，互为印证）：
-  - PokeAPI  zh-hans 名称  —— 覆盖广（道具、宝可梦、招式、特性）
-  - Pokémon Showdown 的 zh-cn 本地化 —— 补充 PokeAPI 缺失的 G-Max 招式等
+数据源（均为官方中文译名，脚本不做任何自行翻译），按优先级：
+  1. PKHeX 的 en / zh-Hans 对照文件 —— 官方游戏数据提取，最权威、覆盖最广
+  2. PokeAPI 的 zh-hans 名称        —— 补充 PKHeX 未收录者
+  3. Pokémon Showdown 的 zh-cn 本地化 —— 补充 G-Max 招式等
 
-这些是**官方中文译名**，脚本不做任何自行翻译。
+三者重叠处以更高优先级的源为准；PKHeX 与 PokeAPI 冲突时 PKHeX 更准确
+（例如 Minun 作「负电拍拍」而非「負电拍拍」、Mimikium Z 作「谜拟丘Ｚ」）。
 
 用法：
     python3 tools/gen_names.py            生成 translations/zh_CN_names.txt 并报告
@@ -23,6 +25,14 @@ from difflib import SequenceMatcher
 REPO = pathlib.Path(__file__).resolve().parent.parent
 POKEAPI = pathlib.Path('/tmp/pokeapi')
 SHOWDOWN = pathlib.Path('/tmp/ps')
+PKHEX = pathlib.Path('/tmp/pkhex')
+
+# 本项目的英文写法与数据源不一致时，按此别名再来一轮匹配。
+# 例：expansion 用 "Bicycle"，而 PKHeX 收录为 "Bike"。
+ALIASES = {
+    'Bicycle': 'Bike',
+    'Mach Bike': 'Mach Bike',
+}
 
 TABLES = [
     {
@@ -54,7 +64,7 @@ TABLES = [
         'kind': 'item',
         'pattern': r'\.name = _\("([^"]*)"\)',
         'files': ['src/data/items.h'],
-        'limit': 16,    # ITEM_NAME_LENGTH（需容纳 EOS）
+        'limit': 17,    # ITEM_NAME_LENGTH（含 EOS）
         'placeholder': r'^[?\-]+$',
     },
 ]
@@ -154,9 +164,27 @@ def parse_showdown(filename):
     return out
 
 
+def load_pkhex(name):
+    """PKHeX 的 en / zh-Hans 文件按同一 id 顺序排列，按行号配对成 en->zh。"""
+    en = (PKHEX / f'{name}_en.txt').read_text(encoding='utf-8').splitlines()
+    zh = (PKHEX / f'{name}_zh.txt').read_text(encoding='utf-8').splitlines()
+    out = {}
+    for i in range(min(len(en), len(zh))):
+        e, z = en[i].strip(), zh[i].strip()
+        if e and z and e != 'None' and z not in ('—', '----', '？？？', '―――――'):
+            out[e] = z
+    return out
+
+
 def build_index():
     """返回 {kind: {norm_id: 中文名, 精确英文名: 中文名}}"""
     api = load_pokeapi()
+    pk = {
+        'species': load_pkhex('species'),
+        'move': load_pkhex('moves'),
+        'ability': load_pkhex('abilities'),
+        'item': load_pkhex('items'),
+    }
     sd = {
         'move': parse_showdown('moves.ts'),
         'ability': parse_showdown('abilities.ts'),
@@ -165,8 +193,12 @@ def build_index():
     }
     idx = {}
     for kind in ('species', 'move', 'ability', 'item'):
-        exact = dict(api[kind])
-        by_norm = {norm(en): zh for en, zh in api[kind].items()}
+        exact = dict(pk[kind])                 # PKHeX 最权威，优先
+        for en, zh in api[kind].items():
+            exact.setdefault(en, zh)
+        by_norm = {norm(en): zh for en, zh in pk[kind].items()}
+        for en, zh in api[kind].items():
+            by_norm.setdefault(norm(en), zh)
         for k, zh in sd[kind].items():
             by_norm.setdefault(k, zh)          # Showdown 的 id 已规范化
         idx[kind] = {'exact': exact, 'norm': by_norm}
@@ -198,7 +230,7 @@ def main():
             for m in re.findall(spec['pattern'], (REPO / f).read_text(encoding='utf-8')):
                 names.append((m, f))
 
-        st = dict(exact=0, norm=0, fuzzy=0, ph=0, unmatched=0, over=0)
+        st = dict(exact=0, norm=0, fuzzy=0, ph=0, unmatched=0, over=0, alias=0)
         unmatched, over, fuzzy_pairs = [], [], []
         table = idx[spec['kind']]['exact']
         nidx = idx[spec['kind']]['norm']
@@ -220,6 +252,10 @@ def main():
                 zh = table[en]; st['exact'] += 1
             elif norm(en) in nidx:
                 zh = nidx[norm(en)]; st['norm'] += 1
+            elif en in ALIASES and (ALIASES[en] in table or norm(ALIASES[en]) in nidx):
+                alias = ALIASES[en]
+                zh = table[alias] if alias in table else nidx[norm(alias)]
+                st['alias'] = st.get('alias', 0) + 1
             else:
                 key = norm(en)
                 best, score = None, 0.0
@@ -270,9 +306,10 @@ def main():
 
     print('=' * 76)
     for label, (total, st, unmatched, over, fp) in report.items():
-        m = st['exact'] + st['norm'] + st['fuzzy']
+        m = st['exact'] + st['norm'] + st['fuzzy'] + st.get('alias', 0)
         print(f'\n{label}: 共 {total} 条')
-        print(f'  官方译名命中 {m} ({m/total*100:.1f}%) = 精确 {st["exact"]} + 规范化 {st["norm"]} + 模糊 {st["fuzzy"]}')
+        print(f'  官方译名命中 {m} ({m/total*100:.1f}%) = 精确 {st["exact"]} + 规范化 {st["norm"]}'
+              f' + 别名 {st.get("alias", 0)} + 模糊 {st["fuzzy"]}')
         print(f'  跳过占位符 {st["ph"]}')
         print(f'  无官方译名 {st["unmatched"]}')
         print(f'  超字节上限 {st["over"]}')

@@ -49,3 +49,6 @@ tools/poryscript/*
 tools/ups/*
 !tools/Pokabbie/Build
 pokeemerald-*.png
+# Python
+__pycache__/
+*.pyc

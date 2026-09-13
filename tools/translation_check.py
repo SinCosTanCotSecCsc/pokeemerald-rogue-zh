@@ -25,7 +25,7 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 
 # 名称类字符串的可用字节数（含 EOS）
 BYTE_BUDGETS = [
-    ('ITEM_NAME_LENGTH', 16, '道具名'),
+    ('ITEM_NAME_LENGTH', 17, '道具名'),
     ('MOVE_NAME_LENGTH', 17, '招式名'),        # B_EXPANDED_MOVE_NAMES=TRUE -> 16+1
     ('ABILITY_NAME_LENGTH', 17, '特性名'),      # 16+1
     ('POKEMON_NAME_LENGTH', 11, '宝可梦名'),     # u8 speciesName[10+1]
