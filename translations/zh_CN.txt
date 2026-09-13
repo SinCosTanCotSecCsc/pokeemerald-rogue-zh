@@ -866,7 +866,7 @@
 "Poké Balls" = "精灵球"
 "Poké Block" = "宝可方块"
 "Pokécenter" = "宝可梦中心"
-"Pokédex" = "宝可梦图鉴"
+"Pokédex" = "图鉴"
 "Pokémon" = "宝可梦"
 "Pokémon Info" = "宝可梦信息"
 "Pokémon Skills" = "宝可梦技能"
