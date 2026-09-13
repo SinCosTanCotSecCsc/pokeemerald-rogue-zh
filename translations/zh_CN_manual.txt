@@ -121,3 +121,131 @@
 "TM " = "学习器"
 "TR " = "记录"
 @file
+
+# ---------------------------------------------------------------- X 道具与学习装置（#else 分支）
+# 这些说明的源码里 `_(` 只开一次，但 #if / #else 各自带一个 `)`：
+#
+#     static const u8 sXDefenseDesc[] = _(
+#     #if B_X_ITEMS_BUFF >= GEN_7
+#         "Sharply raises stat\n" ... "one battle.");     <- 扫描器在此收工
+#     #else
+#         "Raises the stat\n"  ... "battle.");            <- 三条都扫不到
+#     #endif
+#
+# tools/i18n_scan.py 的括号配平在第一个 `)` 就结束，于是 #else 这几条从未进过批次，
+# 也就从未被翻译（游戏里显示英文）。本作 B_X_ITEMS_BUFF = GEN_3，编译的正是 #else。
+# 因为不在批次里，fixups.txt 覆盖不到，只能写进本表。
+#
+# 末尾 "battle."（→「战斗中。」）与四种树果共用，保持不动，故前两条各自成句。
+"Raises the stat\n" = "提高\n"
+"Attack during one\n" = "攻击。\n"
+"Defense during one\n" = "防御。\n"
+"Sp. Atk during one\n" = "特攻。\n"
+"Sp. Def during one\n" = "特防。\n"
+"Speed during one\n" = "速度。\n"
+# X 命中：英文 "Raises accuracy / of attack moves / during one battle."
+# 末条 "during one battle." 与要害攻击（Dire Hit）共用，见 fixups.txt。
+"Raises accuracy\n" = "提高招式\n"
+"of attack moves\n" = "命中率。\n"
+# 学习装置（I_EXP_SHARE_ITEM < GEN_6 的分支）：
+# "A hold item that / gets Exp. points / from battles." → 携带后能在对战中获得经验值。
+"gets Exp. points\n" = "能在对战中\n"
+"from battles." = "获得经验值。"
+
+# ---------------------------------------------------------------- 挑战区（Gimmick 道具 NPC）
+# 这批文案原本一个也没进过批次：地图脚本由 poryscript 生成，
+# 但导出时被漏在批次之外（i18n_scan 只按 `_(` / `.string` 收集，
+# 属于同一类"没被扫到所以没被翻"的情况）。统一在此补齐。
+@file "data/maps/Rogue_Interior_ChallengeFrontier/scripts.inc"
+"Would you like to put back the Mega\n" = "要把超级环\n"
+"Ring?$" = "放回去吗？$"
+"Would you like to take the Mega Ring?$" = "要拿走超级环吗？$"
+"Grants you and other Trainer's the\n" = "让你和其他训练家获得\n"
+"ability to Mega Evolve when a Pokémon\l" = "在宝可梦携带超级石时\l"
+"is holding the correct Mega Stone.$" = "进行超级进化的能力。$"
+"Would you like to put back the Z-Power\n" = "要把Ｚ强力手环\n"
+"Would you like to take the Z-Power Ring?$" = "要拿走Ｚ强力手环吗？$"
+"ability to use Z-Moves when a Pokémon\l" = "在宝可梦携带Ｚ纯晶时\l"
+"is holding the correct Z-Crystal.$" = "使用Ｚ招式的能力。$"
+"Warning…\p" = "警告…\p"
+"You are holding both the Dynamax Band\n" = "你同时持有极巨腕带\n"
+"and the Tera Orb.\p" = "和太晶珠。\p"
+"Both of these cannot be activated at\n" = "两者无法同时\n"
+"once.\p" = "发动。\p"
+"So, at the start of battles where they\n" = "因此在两者都会发动的\n"
+"would be active, one of them of them\l" = "对战开始时，会随机\l"
+"will be randomly selected to be active\l" = "选择其中之一生效，\l"
+"and the other will be temporarily\l" = "另一个则会暂时\l"
+"deactivated.$" = "失效。$"
+"Would you like to put back the Dynamax\n" = "要把极巨腕带\n"
+"Band?$" = "放回去吗？$"
+"Would you like to take the Dynamax Band?$" = "要拿走极巨腕带吗？$"
+"Grants you and other Key Trainer's (e.g.\n" = "让你和其他关键训练家\n"
+"Strong Trainers, Rivals) the ability to\l" = "(如强力训练家、劲敌)\l"
+"Dynamax or Gigantamax, if the Pokémon\l" = "在宝可梦可超极巨化时\l"
+"has a Gigantamax form available.$" = "进行极巨化或超极巨化。$"
+"Would you like to put back the Tera Orb?$" = "要把太晶珠放回去吗？$"
+"Would you like to take the Tera Orb?$" = "要拿走太晶珠吗？$"
+"ability to Terastallize.\p" = "太晶化的能力。\p"
+"Unlike in Scarlet and Violet, the Tera\n" = "与原版朱紫不同，太晶珠\n"
+"Orb will be recharged upon entering\l" = "在进入每个遭遇或\l"
+"every encounter/map, so you may\l" = "地图时就会恢复，\l"
+"Terastallize more freely.$" = "让你更自由地太晶化。$"
+"Once, you have completed any of those\n" = "完成那些任务后，\n"
+"Quests, their Special Items may be\l" = "对应的特殊道具\l"
+"available for purchase.\p" = "就可以购买了。\p"
+"You may speak to me, at any time, to buy\n" = "随时来找我，购买你\n"
+"any Special Items you gain access to\l" = "通过完成任务解锁的\l"
+"through completing Quests.\p" = "特殊道具。\p"
+"Would you like to purchase any Special\n" = "要购买特殊道具\n"
+"Item rewards?$" = "奖励吗？$"
+"Best of luck with you Pokémon\n" = "祝你的宝可梦精通\n"
+"Masteries, {PLAYER}.$" = "任务顺利，{PLAYER}。$"
+@file
+
+# --------------------------------------------------------------- 配置实验室：Pokabbie 的超级咩利羊/皮金玩梗对白（24 条）
+@file "data/maps/Rogue_Interior_ConfigLab/scripts.inc"
+"You know I once made a challenge hack\n" = "你知道吗，我曾为一个朋友\n"
+"for a friend of mine where I gave Pikin\l" = "做过一个挑战改版，我给皮金\l"
+"its very own Mega!\p" = "做了专属的超级进化！\p"
+"A Mega Mareep!\p" = "超级咩利羊！\p"
+"It was a bit insane in that ROM hack\n" = "不过那个改版里确实\n"
+"though…\p" = "有点疯狂…\p"
+"Oh I forgot, doh!\p" = "啊，我忘了，真笨！\p"
+"You can Mega Evolve Pikin in Emerald\n" = "在绿宝石肉鸽里也能让\n"
+"Rogue too!\p" = "皮金超级进化！\p"
+"You need to teach it Hurricane and then\n" = "你得先让它学会暴风，\n"
+"it will be able to Mega Evolve.\p" = "之后才能超级进化。\p"
+"Yes… like Mega Rayquaza…\p" = "没错…就像超级烈空坐那样…\p"
+"Look… I love Mareep alright!\p" = "行了…我就是喜欢咩利羊！\p"
+"There!\p" = "喏！\p"
+"You should be able to teach Pikin\n" = "现在你应该可以从\n"
+"Hurricane now from the Learn Moves\l" = "学习招式菜单里\l"
+"menu.\p" = "让皮金学会暴风了。\p"
+"Why not give Mega Mareep a try for\n" = "你何不亲自试试\n"
+"yourself!\p" = "超级咩利羊呢！\p"
+"Just be careful not to evolve it,\n" = "只是小心别让它进化，\n"
+"otherwise you're going to have to hunt\l" = "否则你就得再去\l"
+"down yet another Pikin…\p" = "找一只皮金了…\p"
+"To be fair…\n" = "话说回来…\n"
+"There are many Pikins…\p" = "皮金还有很多只…\p"
+@file
+
+# --------------------------------------------------------------- 骑行教学：索罗亚相关（4 条）
+@file "data/maps/Rogue_Area_RideTraining/scripts.inc"
+"Would you like Zorua to transform into\n" = "要让索罗亚变身成\n"
+"Would you clear Zorua's transform?$" = "要解除索罗亚的变身吗？$"
+"You can speak with Zorua whenever you\n" = "你随时可以找索罗亚说话，\n"
+"{COLOR GREEN}{SHADOW LIGHT_GREEN}{PLAYER} learnt how to summon Zorua!$" = "{COLOR GREEN}{SHADOW LIGHT_GREEN}{PLAYER}学会了召唤索罗亚！$"
+@file
+
+# --------------------------------------------------------------- PokeConnect：版本不一致提示（1 条）
+@file "data/maps/Rogue_Interior_PokeConnect/scripts.inc"
+"they are not on EX version.$" = "对方不在EX版本上。$"
+@file
+
+# --------------------------------------------------------------- 面包店：友好度检查 NPC 的未完成占位文案（2 条，上游未实现）
+@file "data/maps/Rogue_Hub_Bakery/scripts.inc"
+"FriendshipRatersHouse EventScript\l" = "FriendshipRatersHouse 事件脚本\l"
+"FriendshipRater$" = "FriendshipRater$"
+@file
