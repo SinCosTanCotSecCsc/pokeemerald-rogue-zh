@@ -83,3 +83,29 @@
 "Sapphire" = "蓝宝石"
 
 @file
+
+# ---------------------------------------------------------------- 开场引导
+#
+# 开场博士询问「遭遇宝可梦范围」的那段对话。
+# EX 版（expansion）这段文本与 Vanilla 版不同，批量回收时未覆盖，故手工补。
+# 翻译表按「整条字符串字面量」精确匹配，因此这里必须逐行登记，不能只译整段。
+# 每行显示宽度上限 208px（汉字 12px、拉丁字母 6px），下面各行均留有余量。
+
+# "Finally, for your first Adventure-" / "For your first Adventure-"
+"{COLOR BLUE}Finally, for your first Adventure-\p" = "{COLOR BLUE}最后，在你首次冒险之前——\p"
+"{COLOR BLUE}For your first Adventure-\p" = "{COLOR BLUE}在你首次冒险之前——\p"
+
+# "What encounters would you like?" / "(Select an option to learn more)"
+"What encounters would you like?\n" = "你想遇到什么样的宝可梦？\n"
+"(Select an option to learn more)$" = "(选择一项以了解更多)$"
+
+# 现代模式：覆盖全部九个世代
+"{COLOR BLUE}You'll encounter a selection of Pokémon\n" = "{COLOR BLUE}你会遇到各式各样、来自全部\n"
+"from across all 9 generations.\p" = "九个世代的宝可梦。\p"
+"So Modern is your preference?$" = "所以你想要现代模式？$"
+
+# 经典模式：第一至第三世代，外加其后的进化与形态
+"{COLOR BLUE}You'll encounter Pokémon from\n" = "{COLOR BLUE}你会遇到第一至第三世代\n"
+"generations 1 to 3 along with any\l" = "的宝可梦，以及它们后来\l"
+"future evolutions and forms added.\p" = "新增的进化和形态。\p"
+"So Classic is your preference?$" = "所以你想要经典模式？$"
