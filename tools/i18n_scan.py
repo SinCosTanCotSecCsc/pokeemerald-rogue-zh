@@ -80,11 +80,50 @@ def _scan_paren_block(text, open_idx):
         elif c == ')':
             depth -= 1
             if depth == 0:
-                return lits, i
+                # 初始化列表的每个 #if / #else 分支都可能各带一个 `)`：
+                #
+                #     static const u8 sDesc[] = _(
+                #     #if COND
+                #         "A\n" "B\n");
+                #     #else
+                #         "C\n" "D\n");
+                #     #endif
+                #
+                # 第一个 `)` 并非括号块的终点，后面还有同级字面量。不继续扫的话，
+                # #else 分支的文案既进不了批次（永远翻不到），也会被校验器当成
+                # 「源码里不存在」而误报为陈旧条目。
+                branch = _next_preprocessor_branch(text, i + 1)
+                if branch is None:
+                    return lits, i
+                i = branch
+                depth = 1
+                continue
 
         i += 1
 
     return lits, n
+
+
+def _next_preprocessor_branch(text, i):
+    """i 处起跳过一个分号与空白；若紧接着是 #else / #elif，返回该指令名后的下标。
+
+    只用于识别上面那种「同一初始化列表按分支各写一个 `)`」的写法；
+    遇到 #endif、标识符或其它内容一律返回 None，表示括号块确实结束了。
+    """
+    n = len(text)
+    while i < n and text[i] in ' \t\r\n':
+        i += 1
+    if i < n and text[i] == ';':
+        i += 1
+        while i < n and text[i] in ' \t\r\n':
+            i += 1
+    if i < n and text[i] == '#':
+        j = i + 1
+        while j < n and text[j] in ' \t':
+            j += 1
+        if text[j:j + 4] in ('else', 'elif'):
+            return j
+    return None
 
 
 def iter_literals(text):
