@@ -198,3 +198,41 @@ heals from super\n	受到\n
 Boosts the power of Water-\n	提高水属性招式的威力，\n
 Boosts the power of Fire-\n	提高火属性招式的威力，\n
 type moves for 5 turns.	持续5回合。
+
+# ---------------------------------------------------------------- EV 羽毛/粘糕与场地种子的说明
+# 「An item that raises / the base Defense / of a Pokémon.」这类说明按换行拆成三条，
+# 中间那条被按整句翻译，末条只剩「宝可梦。」，拼出来就成了
+# 「能提升 / 宝可梦基础防御的道具，用于 / 宝可梦。」
+# 末条 "a Pokémon." / "of a Pokémon." 同时被 9 种邮件与「重新开始粘糕」共用，
+# 改它会连带改坏邮件（邮件靠它才对），所以只能把宾语和「适用于」放回前两条：
+#   提升宝可梦的 / 基础防御。适用于 / 宝可梦。
+An item that raises\n	提升宝可梦的\n
+the base HP of\n	基础ＨＰ。适用于\n
+the base Attack of\n	基础攻击。适用于\n
+the base Defense\n	基础防御。适用于\n
+the base Sp. Atk.\n	基础特攻。适用于\n
+the base Sp. Def.\n	基础特防。适用于\n
+the base Speed of\n	基础速度。适用于\n
+# 重新开始粘糕（同族，另用一组字面量）：重置宝可梦全部 / 基础点数。适用于 / 宝可梦。
+An item that resets\n	重置宝可梦全部\n
+all base points of\n	基础点数。适用于\n
+
+# 场地种子：英文断行落在 "Boosts Defense on / Electric Terrain," 上，
+# 原译把「防御」塞进了第二条，于是首行只剩一个「在」，
+# 且第二条 10 字 = 120px 超出说明框（14 格 = 112px，文字自 x=3 起，每行最多 9 字 = 108px）。
+# 改成把「防御在」提到第一条：防御在 / 电气场地上会提高， / 但仅限一次。
+Boosts Defense on\n	防御在\n
+Boosts Sp. Def. on\n	特防在\n
+Electric Terrain,\n	电气场地上会提高，\n
+Grassy Terrain,\n	青草场地上会提高，\n
+Psychic Terrain,\n	精神场地上会提高，\n
+Misty Terrain,\n	薄雾场地上会提高，\n
+
+# ---------------------------------------------------------------- X 道具/要害攻击共用的末条
+# "during one battle." 同时用于 X 命中（Raises accuracy / of attack moves / during one battle.）
+# 与要害攻击（Raises the / critical-hit ratio / during one battle.）。
+# 原译把「概率」塞进末条（「概率，持续一场对战。」），X 命中那边就变成
+# 「提高招式命中率。概率，持续一场对战。」；故把「概率」移回要害攻击自己的那条，
+# 末条只留「持续一场对战。」，两边都通顺。
+critical-hit ratio\n	击中要害的概率，\n
+during one battle.	持续一场对战。
